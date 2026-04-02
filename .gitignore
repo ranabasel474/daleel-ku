@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node / React (frontend)
+node_modules/
+.env.local
+.env.production
+dist/
+.next/
+
+# macOS
+.DS_Store
