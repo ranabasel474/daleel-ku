@@ -1,0 +1,25 @@
+# Core backend
+flask
+flask-cors
+flask-limiter
+python-dotenv
+
+# Database
+supabase
+
+# RAG & AI
+llama-index
+llama-index-vector-stores-supabase
+openai
+
+# PDF extraction
+pymupdf
+
+# Web scraping
+firecrawl-py
+
+# Social media scraping
+apify-client
+
+# Admin password hashing
+bcrypt
