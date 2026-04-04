@@ -124,3 +124,76 @@ The RAG routing in `chat.py` is currently commented out (stub response until `ra
 4. **Query Logs** — grouped by session, filter by All/Answered/Referral, export CSV
 
 "Referral" = `was_answered = false`, student was redirected to official KU department.
+
+## Database Schema
+
+```sql
+-- Session
+CREATE TABLE session (
+  session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  started_at TIMESTAMP DEFAULT NOW(),
+  ended_at TIMESTAMP
+);
+
+-- User queries
+CREATE TABLE user_query (
+  query_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  query_text TEXT NOT NULL,
+  response_text TEXT,
+  was_answered BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  session_id UUID REFERENCES session(session_id)
+);
+
+-- Admin users
+CREATE TABLE admin_user (
+  admin_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Topic
+CREATE TABLE topic (
+  topic_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic_name TEXT NOT NULL
+);
+
+-- Source
+CREATE TABLE source (
+  source_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_name TEXT NOT NULL,
+  url TEXT
+);
+
+-- College
+CREATE TABLE college (
+  college_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  college_name TEXT NOT NULL
+);
+
+-- Document
+CREATE TABLE document (
+  document_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  source_url TEXT,
+  date_added TIMESTAMP DEFAULT NOW(),
+  document_type TEXT,
+  admin_id UUID REFERENCES admin_user(admin_id)
+);
+
+-- Chunk (must be created last — references all other tables)
+CREATE TABLE chunk (
+  chunk_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content TEXT NOT NULL,
+  embedding VECTOR(1536),
+  language TEXT DEFAULT 'ar',
+  title TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  document_id UUID REFERENCES document(document_id),
+  topic_id UUID REFERENCES topic(topic_id),
+  source_id UUID REFERENCES source(source_id),
+  college_id UUID REFERENCES college(college_id)
+);
+```
