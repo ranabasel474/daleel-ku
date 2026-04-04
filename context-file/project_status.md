@@ -6,11 +6,6 @@
 CURRENT STATUS SUMMARY
 ================================================================================
 
-Deadline: April 9, 2026
-Course: ISC 499 Capstone Project — Kuwait University
-Students: Rana Omar (2221191253) + Mahnoor Akhtar (2221168768)
-Instructor: Dr. Bader Alkhazi
-
 ================================================================================
 WHAT IS DONE
 ================================================================================
