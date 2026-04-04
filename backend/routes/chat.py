@@ -16,11 +16,13 @@ from config import supabase, OPENAI_API_KEY
 # The same GPT-4o model defined in config.py is used here directly.
 _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 
-# --- RAG stub imports ---
-# The rag/ files exist but are currently empty.
-# These imports will be uncommented once the RAG pipeline is implemented.
-# from rag.query_engine import search_and_build_context
-# from rag.response import generate_response, handle_gpa_query
+# --- RAG pipeline imports ---
+from rag.ingest import build_index
+from rag.query_engine import search_query
+from rag.response import generate_response
+
+# Build the vector index once at module load so it is reused across requests.
+index = build_index()
 
 
 # -----------------------------------------------------------------------
@@ -161,31 +163,22 @@ def query():
         return jsonify({"error": error_message}), 400
 
     # --- Step 3b: Detect query type (QueryProcessor logic) ---
-    # NOTE: detect_query_type() is called here but its result is not yet used
-    # because both RAG handlers are still stubs. Uncomment the real routing block
-    # below once rag/ is implemented, and the result will be used automatically.
     query_type = detect_query_type(query_text)
 
     # --- Steps 4-10: Call RAG pipeline or GPA handler ---
-    #
-    # Uncomment this block once rag/ is implemented:
-    #
-    # if query_type == "gpa":
-    #     # GPA queries go directly to the LLM — no RAG retrieval needed.
-    #     # Report III Backend package: "OpenAI API directly for tasks such as GPA estimation"
-    #     response_text = handle_gpa_query(query_text)
-    #     source = None
-    #     was_answered = True
-    # else:
-    #     # General academic queries go through the full RAG pipeline.
-    #     # Steps 4-8: search knowledge base → retrieve chunks → generate response
-    #     context, source = search_and_build_context(query_text)
-    #     response_text, was_answered = generate_response(context, query_text)
+    if query_type == "gpa":
+        # GPA queries go directly to the LLM — no RAG retrieval needed.
+        # Report III Backend package: "OpenAI API directly for tasks such as GPA estimation"
+        result = generate_response("", query_text)
+    else:
+        # General academic queries go through the full RAG pipeline.
+        # Steps 4-8: search knowledge base → retrieve chunks → generate response
+        context = search_query(index, query_text)
+        result = generate_response(context, query_text)
 
-    # ---- Stub response (placeholder until rag/ is implemented) ----
-    response_text = "The knowledge base is not yet connected. Please check back soon."
+    response_text = result["answer"]
+    was_answered = result["was_answered"]
     source = None
-    was_answered = False
 
     # --- Step 11: Log query and response anonymously to Supabase ---
     # Report III (Data Privacy): logs store only query text, response text, and timestamp.
