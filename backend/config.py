@@ -13,12 +13,6 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable is not set")
 
 # --- JWT Settings ---
-# SUPABASE_JWT_SECRET is used to verify tokens issued by Supabase Auth.
-# Report III: "The backend verifies the token on each request using Supabase's JWT secret."
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
-if not SUPABASE_JWT_SECRET:
-    raise ValueError("SUPABASE_JWT_SECRET environment variable is not set")
-
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 
