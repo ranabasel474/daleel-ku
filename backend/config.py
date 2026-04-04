@@ -7,21 +7,30 @@ from llama_index.core import Settings
 
 load_dotenv()
 
-#API Keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# --- OpenAI API Key ---
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-#JWT Settings (for admin authentication) 
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
+# --- JWT Settings ---
+# SUPABASE_JWT_SECRET is used to verify tokens issued by Supabase Auth.
+# Report III: "The backend verifies the token on each request using Supabase's JWT secret."
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+if not SUPABASE_JWT_SECRET:
+    raise ValueError("SUPABASE_JWT_SECRET environment variable is not set")
+
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 
-#Supabase client 
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_KEY")
-)
+# --- Supabase Client ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY environment variables are required")
 
-#LlamaIndex / OpenAI setup
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- LlamaIndex / OpenAI Setup ---
 llm = OpenAI(
     model="gpt-4o",
     api_key=OPENAI_API_KEY
@@ -35,3 +44,14 @@ embed_model = OpenAIEmbedding(
 # Apply globally so all LlamaIndex files use same model
 Settings.llm = llm
 Settings.embed_model = embed_model
+
+# --- External Ingestion API Keys ---
+# Uncomment when Firecrawl API key is available
+# FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
+# if not FIRECRAWL_API_KEY:
+#     raise ValueError("FIRECRAWL_API_KEY environment variable is not set")
+
+# Uncomment when Apify API key is available
+# APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# if not APIFY_API_KEY:
+#     raise ValueError("APIFY_API_KEY environment variable is not set")
