@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from openai import OpenAI as OpenAIClient
 
 from app import limiter
-from config import supabase, OPENAI_API_KEY
+from config import supabase_admin, OPENAI_API_KEY
 
 # OpenAI client used only for query type classification.
 # The same GPT-4o model defined in config.py is used here directly.
@@ -140,7 +140,7 @@ def query():
 
     Expected JSON body:
         {
-            "query_text": "What are the admission requirements?",
+            "message": "What are the admission requirements?",
             "session_id": "uuid-string"   <-- optional, from POST /session
         }
 
@@ -152,7 +152,7 @@ def query():
     data = request.get_json()
 
     # --- Steps 1-2: Extract fields from the request body ---
-    query_text = data.get("query_text", "") if data else ""
+    query_text = data.get("message", "") if data else ""
     session_id = data.get("session_id") if data else None
 
     # --- Step 3a: Validate input (InputValidator logic) ---
@@ -201,7 +201,7 @@ def query():
         if session_id:
             log_entry["session_id"] = session_id
 
-        supabase.table("user_query").insert(log_entry).execute()
+        supabase_admin.table("user_query").insert(log_entry).execute()
 
     except Exception as e:
         # A logging failure must not block the student from receiving their response.
@@ -238,7 +238,7 @@ def create_session():
         500 with { "error": str } if the session could not be created
     """
     try:
-        result = supabase.table("session").insert({
+        result = supabase_admin.table("session").insert({
             "started_at": datetime.now(timezone.utc).isoformat()
         }).execute()
 

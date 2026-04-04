@@ -16,13 +16,20 @@ if not OPENAI_API_KEY:
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 
-# --- Supabase Client ---
+# --- Supabase Clients ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("SUPABASE_URL and SUPABASE_KEY environment variables are required")
 
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+if not SUPABASE_SERVICE_KEY:
+    raise ValueError("SUPABASE_SERVICE_KEY environment variable is not set")
+
+# supabase       → Supabase Auth operations only (sign in, verify tokens)
+# supabase_admin → all database table operations (bypasses RLS safely on the server side)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 # --- LlamaIndex / OpenAI Setup ---
 llm = OpenAI(

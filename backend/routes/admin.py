@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from config import supabase
+from config import supabase, supabase_admin
 from auth.jwt import require_auth
 
 admin_bp = Blueprint("admin", __name__)
@@ -46,7 +46,7 @@ def get_documents():
         500: {"error": <message>} if the database call fails
     """
     try:
-        response = supabase.table("document").select("*").execute()
+        response = supabase_admin.table("document").select("*").execute()
         return jsonify({"documents": response.data}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -70,7 +70,7 @@ def add_document():
         return jsonify({"error": "Request body is required"}), 400
 
     try:
-        response = supabase.table("document").insert(data).execute()
+        response = supabase_admin.table("document").insert(data).execute()
         return jsonify({"document": response.data[0]}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -97,7 +97,7 @@ def update_document(doc_id):
         return jsonify({"error": "Request body is required"}), 400
 
     try:
-        response = supabase.table("document").update(data).eq("document_id", doc_id).execute()
+        response = supabase_admin.table("document").update(data).eq("document_id", doc_id).execute()
         return jsonify({"document": response.data[0]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -119,7 +119,7 @@ def delete_document(doc_id):
         500: {"error": <message>} if the database call fails
     """
     try:
-        supabase.table("document").delete().eq("document_id", doc_id).execute()
+        supabase_admin.table("document").delete().eq("document_id", doc_id).execute()
         return jsonify({"message": "Document deleted"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -139,7 +139,7 @@ def get_queries():
     """
     try:
         response = (
-            supabase.table("user_query")
+            supabase_admin.table("user_query")
             .select("*")
             .order("created_at", desc=True)
             .execute()
