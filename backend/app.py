@@ -3,12 +3,19 @@
 # Creates the Flask app, registers route blueprints,
 # and applies CORS and rate limiting as defined in Report III security strategies.
 
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from routes.chat import chat_bp
-from routes.admin import admin_bp
+
+# --- Rate Limiter (module-level) ---
+# Must be defined here, before any blueprint is imported.
+# routes/chat.py does "from app import limiter" — if blueprints were imported
+# above this line, limiter would not exist yet and Python would raise ImportError.
+# Report III: rate limiting is applied to the public chat endpoint only.
+limiter = Limiter(get_remote_address)
+
 
 def create_app():
     """
@@ -18,23 +25,26 @@ def create_app():
     app = Flask(__name__)
 
     # --- CORS ---
-    # Allows the React frontend to communicate with this backend.
-    # As specified in Report III Communications Interfaces section.
-    CORS(app)
+    # Restricts cross-origin requests to the React frontend origin only.
+    # Report III: controlled frontend-backend communication channel.
+    CORS(app, origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")])
 
     # --- Rate Limiting ---
-    # Protects the public chat endpoint from abuse and controls OpenAI API costs.
-    # Applies to all routes by default — 30 requests per minute per IP.
-    # As specified in Report III Security Strategies — Rate Limiting section.
-    limiter = Limiter(
-        get_remote_address,
-        app=app,
-        default_limits=["30 per minute"]
-    )
+    # Attached to the app here; no default limit is set globally.
+    # The 30/min limit is applied only on the public chat endpoint in routes/chat.py.
+    # Report III Security Strategies — Rate Limiting section.
+    limiter.init_app(app)
 
     # --- Route Blueprints ---
-    # chat_bp   → handles student queries (/api/query, /api/session)
+    # Imported here (inside the factory) so that by the time these modules load
+    # and execute "from app import limiter", app.py is already fully initialized
+    # and limiter is defined. Importing them at the top of app.py would trigger
+    # the circular import before limiter exists.
+    # chat_bp   → handles student queries (/api/query, /api/gpa, /api/session)
     # admin_bp  → handles admin panel (/api/admin/login, /api/admin/documents, etc.)
+    from routes.chat import chat_bp
+    from routes.admin import admin_bp
+
     app.register_blueprint(chat_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
@@ -74,4 +84,4 @@ def create_app():
 # --- Run ---
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True, port=5000)
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true", port=5000)
