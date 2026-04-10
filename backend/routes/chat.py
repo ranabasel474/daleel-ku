@@ -19,7 +19,7 @@ _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 # --- RAG pipeline imports ---
 from rag.ingest import build_index
 from rag.query_engine import search_query
-from rag.response import generate_response
+from rag.response import generate_response, handle_gpa_query
 
 # Build the vector index once at module load so it is reused across requests.
 index = build_index()
@@ -169,7 +169,7 @@ def query():
     if query_type == "gpa":
         # GPA queries go directly to the LLM — no RAG retrieval needed.
         # Report III Backend package: "OpenAI API directly for tasks such as GPA estimation"
-        result = generate_response("", query_text)
+        result = handle_gpa_query(query_text)
     else:
         # General academic queries go through the full RAG pipeline.
         # Steps 4-8: search knowledge base → retrieve chunks → generate response
