@@ -6,6 +6,7 @@
 import os
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
 from llama_index.core.node_parser import SentenceSplitter
+from llama_index.readers.file import PyMuPDFReader
 
 from config import llm, embed_model
 
@@ -42,8 +43,13 @@ def build_index():
     if not os.path.isdir(DATA_DIR):
         raise ValueError(f"Data directory not found: {DATA_DIR}")
 
-    # Step 1 — Load all documents from the data/ folder
-    reader = SimpleDirectoryReader(input_dir=DATA_DIR)
+    # Step 1 — Load all documents from the data/ folder.
+    # PyMuPDFReader is used for PDFs because it handles Arabic fonts and
+    # custom glyph encodings correctly; pypdf (the default) garbles them.
+    reader = SimpleDirectoryReader(
+        input_dir=DATA_DIR,
+        file_extractor={".pdf": PyMuPDFReader()},
+    )
     documents = reader.load_data()
 
     if not documents:
