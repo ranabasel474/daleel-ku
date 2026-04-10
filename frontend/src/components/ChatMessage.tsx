@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, Copy, Check, RefreshCw } from 'lucide-react';
-import AcademicBotLogo from './AcademicBotLogo';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Source {
