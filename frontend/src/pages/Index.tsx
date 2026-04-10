@@ -28,32 +28,13 @@ const Index = () => {
   ];
 
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
-
-  // Create a new session on mount and whenever a new chat begins.
-  const startSession = useCallback(async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      setSessionId(data.session_id ?? null);
-      return data.session_id as string | null;
-    } catch {
-      setSessionId(null);
-      return null;
-    }
-  }, []);
-
-  useEffect(() => {
-    startSession();
-  }, [startSession]);
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -94,7 +75,6 @@ const Index = () => {
       }
     }
     setMessages(getInitialMessages());
-    startSession();
   };
 
   const handleRegenerate = async (botMsgIndex: number) => {
