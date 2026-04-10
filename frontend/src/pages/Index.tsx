@@ -28,11 +28,24 @@ const Index = () => {
   ];
 
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+  const createSession = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/session', { method: 'POST' });
+      const data = await res.json();
+      setSessionId(data.session_id);
+    } catch {
+      // session creation failed — queries will still work, just unlinked in logs
+    }
+  }, []);
+
+  useEffect(() => { createSession(); }, [createSession]);
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -62,6 +75,7 @@ const Index = () => {
 
   const handleNewChat = () => {
     setMessages(getInitialMessages());
+    createSession();
   };
 
   const handleRegenerate = async (botMsgIndex: number) => {
@@ -83,7 +97,7 @@ const Index = () => {
       const res = await fetch('http://localhost:5000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query_text: userMsg.content, session_id: null }),
+        body: JSON.stringify({ message: userMsg.content, session_id: sessionId }),
       });
       const data = await res.json();
       setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: data.response, timestamp: ts }]);
@@ -122,7 +136,7 @@ const Index = () => {
       const res = await fetch('http://localhost:5000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query_text: text, session_id: null }),
+        body: JSON.stringify({ message: text, session_id: sessionId }),
       });
       const data = await res.json();
       const botMsg: Message = {
