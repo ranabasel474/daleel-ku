@@ -3,39 +3,50 @@
 # Takes retrieved context and the original question, builds a bilingual
 # system prompt, calls GPT-4o via LlamaIndex, and returns the answer.
 
+import json
+
 from llama_index.core.llms import ChatMessage
 
 from config import llm
 
-# Bilingual system prompt (Arabic + English) instructing the LLM how to
-# behave as the Daleel KU academic assistant.
-SYSTEM_PROMPT = (
-    "You are Daleel, an academic assistant for Kuwait University students. "
-    "Answer questions using ONLY the provided context. "
-    "If the context does not contain enough information to answer, "
-    "say so honestly and suggest the student contact the relevant KU department.\n\n"
-    "أنت دليل، مساعد أكاديمي لطلاب جامعة الكويت. "
-    "أجب على الأسئلة باستخدام السياق المقدم فقط. "
-    "إذا لم يحتوِ السياق على معلومات كافية للإجابة، "
-    "أخبر الطالب بصدق واقترح عليه التواصل مع القسم المختص في جامعة الكويت.\n\n"
-    "Rules:\n"
-    "- IMPORTANT: Always reply in the same language as the query, not the language of the context. "
-    "If the query is in English, reply in English even if the context is Arabic. "
-    "If the query is in Arabic, reply in Arabic.\n"
-    "- Reply in the same language the student used.\n"
-    "- Be concise, helpful, and accurate.\n"
-    "- Do not make up information that is not in the context.\n"
-    "- If the context is empty or irrelevant, activate the fallback response."
-)
-
-# Fallback answer returned when no relevant context was found.
+# Fallback messages used when the context does not contain the answer.
+# The LLM is instructed to use these exact strings so was_answered can be
+# set correctly by parsing the structured JSON response.
 FALLBACK_AR = (
-    "عذرًا، لم أتمكن من العثور على معلومات كافية للإجابة على سؤالك. "
-    "يرجى التواصل مع القسم المختص في جامعة الكويت للحصول على المساعدة."
+    "لم أجد معلومات كافية حول هذا الموضوع في المصادر المتاحة. "
+    "يرجى مراجعة الدليل الأكاديمي الرسمي أو التواصل مع الإرشاد الأكاديمي."
 )
 FALLBACK_EN = (
-    "Sorry, I could not find enough information to answer your question. "
-    "Please contact the relevant Kuwait University department for assistance."
+    "I could not find sufficient information about this topic in the available sources. "
+    "Please refer to the official academic guide or contact academic advising."
+)
+
+# Strict grounding prompt. The LLM must respond with a JSON object so that
+# was_answered can be determined from the model's own assessment rather than
+# by inspecting the answer string after the fact.
+SYSTEM_PROMPT = (
+    "You are Daleel, an academic assistant for Kuwait University students.\n\n"
+    "## STRICT GROUNDING RULES — follow exactly, no exceptions:\n"
+    "1. Answer ONLY using information explicitly stated in the provided context. "
+    "Do NOT use prior knowledge, training data, or any information outside the context.\n"
+    "2. NEVER invent, estimate, or infer numbers, dates, names, GPA values, credit hours, "
+    "grades, deadlines, or requirements. If a value is not word-for-word in the context, "
+    "do not include it.\n"
+    "3. If the context contains the answer, quote or paraphrase it directly from the context.\n"
+    "4. If the context does NOT contain enough information to answer the question, "
+    "set was_answered to false and use the exact fallback text specified below — "
+    "do not add extra explanation.\n\n"
+    "## LANGUAGE RULE:\n"
+    "Detect the language of the student's question. "
+    "If the question is in Arabic, use the Arabic fallback. "
+    "If the question is in English, use the English fallback. "
+    "Always reply in the same language as the question regardless of the context language.\n\n"
+    "## FALLBACK TEXTS (use verbatim when was_answered is false):\n"
+    f"Arabic : {FALLBACK_AR}\n"
+    f"English: {FALLBACK_EN}\n\n"
+    "## RESPONSE FORMAT:\n"
+    "You MUST respond with a JSON object and nothing else — no markdown, no code fences.\n"
+    '{"was_answered": true/false, "answer": "..."}'
 )
 
 
@@ -108,13 +119,16 @@ def generate_response(context: str, query: str) -> dict:
     appendSourceReference() from the class diagram.
 
     Workflow:
-        1. If the context is empty, return a fallback response immediately.
-        2. Build a chat prompt consisting of:
-           - A system message with the bilingual instructions.
-           - A user message containing the context and the question.
-        3. Call GPT-4o through the LlamaIndex llm.chat() interface.
-        4. Return the answer along with a flag indicating whether the
-           question was actually answered from the knowledge base.
+        1. If the context is empty, return the bilingual fallback immediately
+           without calling the LLM (was_answered = False).
+        2. Build a chat prompt with the strict grounding system prompt and
+           a user message containing the context and the question.
+        3. Call GPT-4o, which responds with a JSON object:
+               {"was_answered": bool, "answer": str}
+           The model self-reports whether the context contained the answer,
+           which is more reliable than inspecting the answer string afterward.
+        4. Parse the JSON. If parsing fails, treat the raw text as the answer
+           and set was_answered = False as a safe default.
 
     Args:
         context (str): The concatenated chunks returned by
@@ -124,10 +138,11 @@ def generate_response(context: str, query: str) -> dict:
     Returns:
         dict: {
             "answer": str   — the generated response text,
-            "was_answered": bool — True if context was available and used
+            "was_answered": bool — True only when the context contained
+                                   the answer; False for fallback responses
         }
     """
-    # --- Fallback handling ---
+    # --- Fallback for empty context (no chunks retrieved) ---
     if not context or not context.strip():
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
         return {"answer": fallback_text, "was_answered": False}
@@ -144,7 +159,17 @@ def generate_response(context: str, query: str) -> dict:
     ]
 
     # --- Call GPT-4o via LlamaIndex ---
-    response = llm.chat(messages)
-    answer = response.message.content.strip()
+    raw = llm.chat(messages).message.content.strip()
 
-    return {"answer": answer, "was_answered": True}
+    # --- Parse the structured JSON response ---
+    try:
+        parsed = json.loads(raw)
+        answer = parsed.get("answer", "").strip()
+        was_answered = bool(parsed.get("was_answered", False))
+    except (json.JSONDecodeError, AttributeError):
+        # If the model did not return valid JSON, surface the raw text and
+        # flag it as unanswered so the admin can review it in query logs.
+        answer = raw
+        was_answered = False
+
+    return {"answer": answer, "was_answered": was_answered}

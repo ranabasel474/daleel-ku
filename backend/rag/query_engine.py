@@ -6,7 +6,7 @@
 from llama_index.core import VectorStoreIndex
 
 # Number of chunks to retrieve per query
-TOP_K = 3
+TOP_K = 5
 
 
 def search_query(index: VectorStoreIndex, question: str) -> str:
