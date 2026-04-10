@@ -34,6 +34,9 @@ const Index = () => {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  // Ref keeps the beforeunload handler in sync with the latest sessionId
+  // without needing to re-register the listener on every state change.
+  const sessionIdRef = useRef<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -57,6 +60,29 @@ const Index = () => {
   useEffect(() => {
     startSession();
   }, [startSession]);
+
+  // Mirror sessionId into a ref so the beforeunload handler always reads
+  // the current value without needing to be re-registered on each change.
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
+  // Close the session when the user navigates away or closes the tab (beforeunload),
+  // and also on React component unmount (effect cleanup).
+  // sendBeacon is used for the unload case because fetch is unreliable at that point.
+  useEffect(() => {
+    const endSession = () => {
+      const id = sessionIdRef.current;
+      if (!id) return;
+      navigator.sendBeacon(`http://localhost:5000/api/session/${id}`);
+    };
+
+    window.addEventListener('beforeunload', endSession);
+    return () => {
+      window.removeEventListener('beforeunload', endSession);
+      endSession();
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
