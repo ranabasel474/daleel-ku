@@ -31,8 +31,29 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+  // Create a new session on mount and whenever a new chat begins.
+  const startSession = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      setSessionId(data.session_id ?? null);
+      return data.session_id as string | null;
+    } catch {
+      setSessionId(null);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    startSession();
+  }, [startSession]);
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -60,8 +81,20 @@ const Index = () => {
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    // Close the current session before resetting the UI.
+    if (sessionId) {
+      try {
+        await fetch(`http://localhost:5000/api/session/${sessionId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // A session-close failure should not block the user from starting fresh.
+      }
+    }
     setMessages(getInitialMessages());
+    startSession();
   };
 
   const handleRegenerate = async (botMsgIndex: number) => {
@@ -83,7 +116,7 @@ const Index = () => {
       const res = await fetch('http://localhost:5000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query_text: userMsg.content, session_id: null }),
+        body: JSON.stringify({ message: userMsg.content, session_id: sessionId }),
       });
       const data = await res.json();
       setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: data.response, timestamp: ts }]);
@@ -122,7 +155,7 @@ const Index = () => {
       const res = await fetch('http://localhost:5000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query_text: text, session_id: null }),
+        body: JSON.stringify({ message: text, session_id: sessionId }),
       });
       const data = await res.json();
       const botMsg: Message = {

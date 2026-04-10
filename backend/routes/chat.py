@@ -241,3 +241,38 @@ def create_session():
     except Exception as e:
         print(f"Error creating session: {e}")
         return jsonify({"error": "Could not create a new session."}), 500
+
+
+# -----------------------------------------------------------------------
+# PATCH /session/<session_id>
+# Closes a session by writing the ended_at timestamp.
+# Called by the frontend when the student starts a new chat, closing
+# the previous session so the duration is recorded in the database.
+# Report III database schema: session(session_id, started_at, ended_at)
+# -----------------------------------------------------------------------
+@chat_bp.route("/session/<session_id>", methods=["PATCH"])
+def end_session(session_id):
+    """
+    Sets ended_at on an existing session row, marking it as closed.
+
+    The frontend calls this before creating a new session (i.e., when the
+    student clicks "New Chat"). Without this call, ended_at remains NULL
+    and session duration cannot be calculated in the admin Query Logs view.
+
+    Args (URL):
+        session_id (str): UUID of the session to close.
+
+    Returns:
+        200 with { "session_id": str }
+        500 with { "error": str } if the update fails
+    """
+    try:
+        supabase_admin.table("session").update({
+            "ended_at": datetime.now(timezone.utc).isoformat()
+        }).eq("session_id", session_id).execute()
+
+        return jsonify({"session_id": session_id}), 200
+
+    except Exception as e:
+        print(f"Error ending session {session_id}: {e}")
+        return jsonify({"error": "Could not end the session."}), 500
