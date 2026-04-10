@@ -66,7 +66,6 @@ interface LanguageContextType {
   isRTL: boolean;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
