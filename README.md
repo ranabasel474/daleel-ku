@@ -2,7 +2,7 @@
 
 An AI-powered, bilingual academic chatbot for Kuwait University students. Built as an ISC 499 Capstone project (Spring 2025/2026).
 
-Students ask questions in Arabic or English and get answers sourced directly from the KU knowledge base. The chatbot mirrors the user's language automatically. A separate admin panel lets authorized KU staff manage the knowledge base and review query logs.
+Students ask questions in Arabic or English and get answers sourced directly from the KU knowledge base. Students select their preferred interface language via a toggle. The chatbot automatically detects the language of each query and responds in the same language. A separate admin panel lets authorized KU staff manage the knowledge base and review query logs.
 
 ---
 
@@ -118,6 +118,119 @@ Accessible to authorized KU staff only. JWT-based auth (tokens expire after 8 ho
 | Dashboard | Query stats, recent activity |
 | Content Management | Add, edit, delete documents in the knowledge base |
 | Query Logs | Browse queries grouped by session, filter by status, export CSV |
+
+---
+
+## API Endpoints
+
+### Student (public)
+
+**`POST /api/session`**  
+Creates a new chat session. Call this once when the student opens the chat page and attach the returned `session_id` to all subsequent query requests.
+
+| | |
+|---|---|
+| Request body | _(none)_ |
+| `201` | `{ "session_id": string }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`PATCH /api/session/<session_id>`**  
+Closes an open session by recording its end time. Call this before starting a new session.
+
+| | |
+|---|---|
+| URL param | `session_id` — UUID of the session to close |
+| Request body | _(none)_ |
+| `200` | `{ "session_id": string }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`POST /api/query`** — rate limited to 30 req/min per IP  
+Submits a student question and returns the chatbot's response.
+
+| | |
+|---|---|
+| Request body | `{ "message": string, "session_id": string (optional) }` |
+| `200` | `{ "response": string, "source": string\|null, "was_answered": boolean }` |
+| `400` | `{ "error": string }` — empty query or exceeds 1000 chars |
+| `429` | `{ "error": string }` — rate limit exceeded |
+| `500` | `{ "error": string }` |
+
+---
+
+### Admin (protected — requires `Authorization: Bearer <token>`)
+
+**`POST /api/admin/login`**  
+Authenticates an admin user via Supabase Auth and returns a JWT access token.
+
+| | |
+|---|---|
+| Request body | `{ "email": string, "password": string }` |
+| `200` | `{ "access_token": string }` |
+| `400` | `{ "error": "email and password are required" }` |
+| `401` | `{ "error": "Invalid credentials" }` |
+
+---
+
+**`GET /api/admin/documents`**  
+Returns all documents in the knowledge base.
+
+| | |
+|---|---|
+| Request body | _(none)_ |
+| `200` | `{ "documents": [ document, ... ] }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`POST /api/admin/documents`**  
+Adds a new document record to the knowledge base.
+
+| | |
+|---|---|
+| Request body | `{ "title": string, "source_url": string, "document_type": string, "admin_id": string }` |
+| `201` | `{ "document": object }` |
+| `400` | `{ "error": "Request body is required" }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`PUT /api/admin/documents/<doc_id>`**  
+Updates an existing document by ID.
+
+| | |
+|---|---|
+| URL param | `doc_id` — UUID of the document |
+| Request body | any subset of document fields to update |
+| `200` | `{ "document": object }` |
+| `400` | `{ "error": "Request body is required" }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`DELETE /api/admin/documents/<doc_id>`**  
+Deletes a document by ID.
+
+| | |
+|---|---|
+| URL param | `doc_id` — UUID of the document |
+| Request body | _(none)_ |
+| `200` | `{ "message": "Document deleted" }` |
+| `500` | `{ "error": string }` |
+
+---
+
+**`GET /api/admin/queries`**  
+Returns all logged student queries, ordered newest first.
+
+| | |
+|---|---|
+| Request body | _(none)_ |
+| `200` | `{ "queries": [ query, ... ] }` |
+| `500` | `{ "error": string }` |
 
 ---
 
