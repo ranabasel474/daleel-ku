@@ -1,4 +1,4 @@
-# Daleel KU — دليل جامعة الكويت
+# Daleel KU
 
 An AI-powered, bilingual academic chatbot for Kuwait University students. Built as an ISC 499 Capstone project (Spring 2025/2026).
 
