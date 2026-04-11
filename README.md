@@ -8,9 +8,9 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 
 ## Tech Stack
 
-**Backend** — Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
-**Frontend** — React · TypeScript · Tailwind CSS · Vite  
-**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG pipeline management
+**Backend**: Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
+**Frontend**: React · TypeScript · Tailwind CSS · Vite  
+**AI**: OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG pipeline management
 
 ---
 
@@ -83,8 +83,8 @@ Create `backend/.env` from the example file. Variables marked **required** will 
 | `SUPABASE_URL`        | **required**            | Supabase dashboard → Settings → API                                               |
 | `SUPABASE_KEY`        | **required**            | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
 | `SUPABASE_JWT_SECRET` | **required**            | Supabase dashboard → Settings → API → JWT Settings                                |
-| `FIRECRAWL_API_KEY`   | —                       | firecrawl.dev → Dashboard → API Keys                                              |
-| `APIFY_API_KEY`       | —                       | apify.com → Settings → Integrations                                               |
+| `FIRECRAWL_API_KEY`   | optional                | firecrawl.dev → Dashboard → API Keys                                              |
+| `APIFY_API_KEY`       | optional                | apify.com → Settings → Integrations                                               |
 | `JWT_ALGORITHM`       | `HS256`                 | —                                                                                 |
 | `JWT_EXPIRY_HOURS`    | `8`                     | —                                                                                 |
 | `FLASK_DEBUG`         | `false`                 | —                                                                                 |
@@ -99,9 +99,9 @@ When a student submits a question:
 1. The query is validated (1000 char max, non-empty)
 2. GPT-4o classifies it as `"gpa"` or `"general"`
 3. **GPA queries** go directly to the LLM with a hardcoded KU grade scale prompt — no retrieval needed
-4. **General queries** go through the RAG pipeline: embed → pgvector search → top-3 chunks → GPT-4o response
+4. **General queries** go through the RAG pipeline: embed → pgvector search → top-5 chunks → GPT-4o response
 5. The query and response are logged anonymously to the `user_query` table
-6. The response is returned with a `was_answered` flag — if `false`, the student is redirected to the relevant KU department
+6. The response is returned with a `was_answered` flag (if `false`, the student is redirected to the relevant KU department)
 
 ---
 
@@ -243,12 +243,6 @@ Returns all logged student queries, ordered newest first.
 - `admin_user` → `document` (1:N) — tracks which admin added a document
 - `document` → `chunk` (1:N) — a document is split into multiple chunks at ingestion
 - `chunk` → `topic`, `source`, `college` (N:1 each) — each chunk is tagged with metadata for filtering
-
-**Key design notes**
-
-- `chunk.embedding` is `VECTOR(1536)` — matches OpenAI's `text-embedding-ada-002` output dimension; pgvector handles the similarity search
-- Chunks are created by splitting documents with a 512-token window and 50-token overlap to preserve context across boundaries
-- `user_query.was_answered = false` marks queries logged as "Referral" in the admin Query Logs view
 
 ---
 
