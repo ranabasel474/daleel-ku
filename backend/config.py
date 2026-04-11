@@ -35,7 +35,8 @@ supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 # --- LlamaIndex / OpenAI Setup ---
 llm = OpenAI(
     model="gpt-4o",
-    api_key=OPENAI_API_KEY
+    api_key=OPENAI_API_KEY,
+    temperature=0,  # deterministic — prevents hallucination on grounded RAG responses
 )
 
 embed_model = OpenAIEmbedding(

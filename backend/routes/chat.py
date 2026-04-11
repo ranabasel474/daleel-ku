@@ -69,12 +69,13 @@ def query():
     if query_type == "gpa":
         result = handle_gpa_query(query_text)
     else:
-        context = search_query(index, query_text)
-        result = generate_response(context, query_text)
+        search_result = search_query(index, query_text)
+        result = generate_response(search_result, query_text)
 
     response_text = result["answer"]
     was_answered = result["was_answered"]
-    source = None  # reserved for future source attribution
+    source_url = result.get("source_url")
+    source_name = result.get("source_name")
 
     try:
         log_entry = {
@@ -94,8 +95,9 @@ def query():
 
     return jsonify({
         "response": response_text,
-        "source": source,
-        "was_answered": was_answered
+        "was_answered": was_answered,
+        "source_url": source_url,
+        "source_name": source_name,
     }), 200
 
 

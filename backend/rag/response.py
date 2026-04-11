@@ -22,7 +22,11 @@ SYSTEM_PROMPT = (
     "grades, deadlines, or requirements. If a value is not word-for-word in the context, "
     "do not include it.\n"
     "3. If the context contains the answer, quote or paraphrase it directly from the context.\n"
-    "4. If the context does NOT contain enough information to answer the question, "
+    "4. When the context contains multiple similar numeric values (e.g. different GPA thresholds), "
+    "you MUST read the surrounding sentences in the same chunk to identify which concept each value "
+    "belongs to. Only use the value that clearly corresponds to the question being asked. "
+    "If you cannot determine which value answers the question, set was_answered to false.\n"
+    "5. If the context does NOT contain enough information to answer the question, "
     "set was_answered to false and use the exact fallback text specified below — "
     "do not add extra explanation.\n\n"
     "## LANGUAGE RULE:\n"
@@ -69,7 +73,7 @@ GPA_SYSTEM_PROMPT = (
 )
 
 
-# Handles GPA queries by passing the KU grade scale directly to the LLM — no RAG needed
+# Handles GPA queries by passing the KU grade scale directly to the LLM
 def handle_gpa_query(query: str) -> dict:
     messages = [
         ChatMessage(role="system", content=GPA_SYSTEM_PROMPT),
@@ -82,12 +86,18 @@ def handle_gpa_query(query: str) -> dict:
     return {"answer": answer, "was_answered": True}
 
 
-# Generates a grounded response from retrieved context; returns fallback if context is empty
-def generate_response(context: str, query: str) -> dict:
+# Generates a grounded response from retrieved context.
+# search_result is the dict returned by search_query():
+#   {"context": str, "source_url": str|None, "source_name": str|None}
+def generate_response(search_result: dict, query: str) -> dict:
+    context = search_result.get("context", "")
+    source_url = search_result.get("source_url")
+    source_name = search_result.get("source_name")
+
     if not context or not context.strip():
-        # skip the LLM call entirely when no chunks were retrieved
+        # Returns fallback if context is empty
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
-        return {"answer": fallback_text, "was_answered": False}
+        return {"answer": fallback_text, "was_answered": False, "source_url": None, "source_name": None}
 
     user_content = (
         f"Context:\n{context}\n\n"
@@ -110,4 +120,8 @@ def generate_response(context: str, query: str) -> dict:
         answer = raw
         was_answered = False
 
-    return {"answer": answer, "was_answered": was_answered}
+    # Append source citation only when the question was actually answered
+    if was_answered and source_name and source_url:
+        answer = f"{answer}\n\nالمصدر: [{source_name}]({source_url})"
+
+    return {"answer": answer, "was_answered": was_answered, "source_url": source_url, "source_name": source_name}
