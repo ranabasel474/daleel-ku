@@ -16,13 +16,16 @@ chat_bp = Blueprint("chat", __name__)
 
 MAX_QUERY_LENGTH = 1000  # characters
 
-
-# Returns (is_valid, error_message) — error_message is None when valid
+# Validates the student query before processing — returns (is_valid, error_message)
 def validate_query(text):
+    # Reject empty or whitespace-only input
     if not text or not text.strip():
-        return False, "Query cannot be empty."
+        return False, "Query can't be empty."
+    
+    # Reject queries exceeding the character limit to prevent prompt injection
     if len(text) > MAX_QUERY_LENGTH:
         return False, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
+    
     return True, None
 
 
