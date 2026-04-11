@@ -39,9 +39,10 @@ def build_index():
     if not documents:
         raise ValueError("No documents found in the data/ directory.")
 
-    # Clean each document's text before chunking
-    for doc in documents:
-        doc.text = _clean_arabic(doc.text)
-
     nodes = _SPLITTER.get_nodes_from_documents(documents)
+
+    # Clean kashida and diacritics from each node after splitting
+    for node in nodes:
+        node.set_content(_clean_arabic(node.get_content()))
+
     return VectorStoreIndex(nodes)
