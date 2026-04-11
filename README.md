@@ -10,8 +10,7 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 
 **Backend** — Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
 **Frontend** — React · TypeScript · Tailwind CSS · Vite  
-**Database** — Supabase + pgvector (1536-dim embeddings)  
-**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG orchestration
+**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG pipeline management
 
 ---
 
@@ -48,7 +47,7 @@ daleel-ku/
 ### Prerequisites
 
 - Python 3.10+
-- Node.js 
+- Node.js
 - A Supabase project with pgvector enabled
 - An OpenAI API key
 
@@ -78,18 +77,18 @@ npm run dev                  # Vite dev server on http://localhost:5173
 
 Create `backend/.env` from the example file. Variables marked **required** will raise an error on startup if missing.
 
-| Variable | Default | Where to get it |
-|---|---|---|
-| `OPENAI_API_KEY` | **required** | platform.openai.com |
-| `SUPABASE_URL` | **required** | Supabase dashboard → Settings → API |
-| `SUPABASE_KEY` | **required** | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
-| `SUPABASE_JWT_SECRET` | **required** | Supabase dashboard → Settings → API → JWT Settings |
-| `FIRECRAWL_API_KEY` | — | firecrawl.dev → Dashboard → API Keys |
-| `APIFY_API_KEY` | — | apify.com → Settings → Integrations |
-| `JWT_ALGORITHM` | `HS256` | — |
-| `JWT_EXPIRY_HOURS` | `8` | — |
-| `FLASK_DEBUG` | `false` | — |
-| `FRONTEND_URL` | `http://localhost:5173` | — |
+| Variable              | Default                 | Where to get it                                                                   |
+| --------------------- | ----------------------- | --------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`      | **required**            | platform.openai.com                                                               |
+| `SUPABASE_URL`        | **required**            | Supabase dashboard → Settings → API                                               |
+| `SUPABASE_KEY`        | **required**            | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
+| `SUPABASE_JWT_SECRET` | **required**            | Supabase dashboard → Settings → API → JWT Settings                                |
+| `FIRECRAWL_API_KEY`   | —                       | firecrawl.dev → Dashboard → API Keys                                              |
+| `APIFY_API_KEY`       | —                       | apify.com → Settings → Integrations                                               |
+| `JWT_ALGORITHM`       | `HS256`                 | —                                                                                 |
+| `JWT_EXPIRY_HOURS`    | `8`                     | —                                                                                 |
+| `FLASK_DEBUG`         | `false`                 | —                                                                                 |
+| `FRONTEND_URL`        | `http://localhost:5173` | —                                                                                 |
 
 ---
 
@@ -101,10 +100,8 @@ When a student submits a question:
 2. GPT-4o classifies it as `"gpa"` or `"general"`
 3. **GPA queries** go directly to the LLM with a hardcoded KU grade scale prompt — no retrieval needed
 4. **General queries** go through the RAG pipeline: embed → pgvector search → top-3 chunks → GPT-4o response
-5. The query and response are logged to the `user_query` table (no PII stored)
-6. The response is returned along with a `was_answered` flag
-
-Unanswered queries (`was_answered = false`) are surfaced in the admin panel so staff can identify knowledge gaps.
+5. The query and response are logged anonymously to the `user_query` table
+6. The response is returned with a `was_answered` flag — if `false`, the student is redirected to the relevant KU department
 
 ---
 
@@ -112,12 +109,12 @@ Unanswered queries (`was_answered = false`) are surfaced in the admin panel so s
 
 Accessible to authorized KU staff only. JWT-based auth (tokens expire after 8 hours).
 
-| Page | Purpose |
-|---|---|
-| Login | Credential form, JWT issued on success |
-| Dashboard | Query stats, recent activity |
-| Content Management | Add, edit, delete documents in the knowledge base |
-| Query Logs | Browse queries grouped by session, filter by status, export CSV |
+| Page               | Purpose                                                         |
+| ------------------ | --------------------------------------------------------------- |
+| Login              | Credential form, JWT issued on success                          |
+| Dashboard          | Query stats, recent activity                                    |
+| Content Management | Add, edit, delete documents in the knowledge base               |
+| Query Logs         | Browse queries grouped by session, filter by status, export CSV |
 
 ---
 
@@ -128,36 +125,33 @@ Accessible to authorized KU staff only. JWT-based auth (tokens expire after 8 ho
 **`POST /api/session`**  
 Creates a new chat session. Call this once when the student opens the chat page and attach the returned `session_id` to all subsequent query requests.
 
-| | |
-|---|---|
-| Request body | _(none)_ |
-| `201` | `{ "session_id": string }` |
-| `500` | `{ "error": string }` |
-
----
+| Field        | Details                    |
+| ------------ | -------------------------- |
+| Request body | _(none)_                   |
+| `201`        | `{ "session_id": string }` |
+| `500`        | `{ "error": string }`      |
 
 **`PATCH /api/session/<session_id>`**  
 Closes an open session by recording its end time. Call this before starting a new session.
 
-| | |
-|---|---|
-| URL param | `session_id` — UUID of the session to close |
-| Request body | _(none)_ |
-| `200` | `{ "session_id": string }` |
-| `500` | `{ "error": string }` |
-
----
+| Field        | Details                                     |
+| ------------ | ------------------------------------------- |
+| URL param    | `session_id` — UUID of the session to close |
+| Request body | _(none)_                                    |
+| `200`        | `{ "session_id": string }`                  |
+| `500`        | `{ "error": string }`                       |
 
 **`POST /api/query`** — rate limited to 30 req/min per IP  
 Submits a student question and returns the chatbot's response.
 
-| | |
-|---|---|
-| Request body | `{ "message": string, "session_id": string (optional) }` |
-| `200` | `{ "response": string, "source": string\|null, "was_answered": boolean }` |
-| `400` | `{ "error": string }` — empty query or exceeds 1000 chars |
-| `429` | `{ "error": string }` — rate limit exceeded |
-| `500` | `{ "error": string }` |
+| Field        | Details                                                                   |
+| ------------ | ------------------------------------------------------------------------- |
+| `message`    | string, required — the student's question (max 1000 chars)                |
+| `session_id` | string, optional — UUID from `POST /api/session`                          |
+| `200`        | `{ "response": string, "source": string\|null, "was_answered": boolean }` |
+| `400`        | `{ "error": string }` — empty query or exceeds 1000 chars                 |
+| `429`        | `{ "error": string }` — rate limit exceeded                               |
+| `500`        | `{ "error": string }`                                                     |
 
 ---
 
@@ -166,82 +160,95 @@ Submits a student question and returns the chatbot's response.
 **`POST /api/admin/login`**  
 Authenticates an admin user via Supabase Auth and returns a JWT access token.
 
-| | |
-|---|---|
-| Request body | `{ "email": string, "password": string }` |
-| `200` | `{ "access_token": string }` |
-| `400` | `{ "error": "email and password are required" }` |
-| `401` | `{ "error": "Invalid credentials" }` |
-
----
+| Field      | Details                                          |
+| ---------- | ------------------------------------------------ |
+| `email`    | string, required                                 |
+| `password` | string, required                                 |
+| `200`      | `{ "access_token": string }`                     |
+| `400`      | `{ "error": "email and password are required" }` |
+| `401`      | `{ "error": "Invalid credentials" }`             |
 
 **`GET /api/admin/documents`**  
 Returns all documents in the knowledge base.
 
-| | |
-|---|---|
-| Request body | _(none)_ |
-| `200` | `{ "documents": [ document, ... ] }` |
-| `500` | `{ "error": string }` |
-
----
+| Field        | Details                              |
+| ------------ | ------------------------------------ |
+| Request body | _(none)_                             |
+| `200`        | `{ "documents": [ document, ... ] }` |
+| `500`        | `{ "error": string }`                |
 
 **`POST /api/admin/documents`**  
 Adds a new document record to the knowledge base.
 
-| | |
-|---|---|
-| Request body | `{ "title": string, "source_url": string, "document_type": string, "admin_id": string }` |
-| `201` | `{ "document": object }` |
-| `400` | `{ "error": "Request body is required" }` |
-| `500` | `{ "error": string }` |
-
----
+| Field           | Details                                        |
+| --------------- | ---------------------------------------------- |
+| `title`         | string, required                               |
+| `source_url`    | string                                         |
+| `document_type` | string                                         |
+| `admin_id`      | string — UUID of the admin adding the document |
+| `201`           | `{ "document": object }`                       |
+| `400`           | `{ "error": "Request body is required" }`      |
+| `500`           | `{ "error": string }`                          |
 
 **`PUT /api/admin/documents/<doc_id>`**  
 Updates an existing document by ID.
 
-| | |
-|---|---|
-| URL param | `doc_id` — UUID of the document |
-| Request body | any subset of document fields to update |
-| `200` | `{ "document": object }` |
-| `400` | `{ "error": "Request body is required" }` |
-| `500` | `{ "error": string }` |
-
----
+| Field        | Details                                   |
+| ------------ | ----------------------------------------- |
+| URL param    | `doc_id` — UUID of the document to update |
+| Request body | any subset of document fields to update   |
+| `200`        | `{ "document": object }`                  |
+| `400`        | `{ "error": "Request body is required" }` |
+| `500`        | `{ "error": string }`                     |
 
 **`DELETE /api/admin/documents/<doc_id>`**  
 Deletes a document by ID.
 
-| | |
-|---|---|
-| URL param | `doc_id` — UUID of the document |
-| Request body | _(none)_ |
-| `200` | `{ "message": "Document deleted" }` |
-| `500` | `{ "error": string }` |
-
----
+| Field        | Details                                   |
+| ------------ | ----------------------------------------- |
+| URL param    | `doc_id` — UUID of the document to delete |
+| Request body | _(none)_                                  |
+| `200`        | `{ "message": "Document deleted" }`       |
+| `500`        | `{ "error": string }`                     |
 
 **`GET /api/admin/queries`**  
 Returns all logged student queries, ordered newest first.
 
-| | |
-|---|---|
-| Request body | _(none)_ |
-| `200` | `{ "queries": [ query, ... ] }` |
-| `500` | `{ "error": string }` |
+| Field        | Details                         |
+| ------------ | ------------------------------- |
+| Request body | _(none)_                        |
+| `200`        | `{ "queries": [ query, ... ] }` |
+| `500`        | `{ "error": string }`           |
 
 ---
 
 ## Database
 
-8 tables in Supabase. The `chunk` table is the central entity — every retrieved piece of knowledge is a chunk tied to a document, source, topic, and college.
+8 tables in Supabase with the pgvector extension enabled.
 
-Key design choices:
-- `chunk.embedding` is `VECTOR(1536)` — requires the pgvector extension (already enabled on the project)
-- `user_query` stores only query text, response, and timestamp — no user identifiers
-- `was_answered = false` marks referral cases (student redirected to a KU department)
+| Table        | Purpose                                                                        |
+| ------------ | ------------------------------------------------------------------------------ |
+| `session`    | Tracks each anonymous student chat session (`started_at`, `ended_at`)          |
+| `user_query` | Logs every query and response — no PII, analytics only                         |
+| `admin_user` | Stores admin credentials (`email`, `password_hash`)                            |
+| `document`   | Metadata for each ingested document (`title`, `source_url`, `document_type`)   |
+| `chunk`      | The central entity — a piece of text from a document with its vector embedding |
+| `topic`      | Lookup table for content topics                                                |
+| `source`     | Lookup table for content sources (`source_name`, `url`)                        |
+| `college`    | Lookup table for KU colleges                                                   |
+
+**Relationships**
+
+- `session` → `user_query` (1:N) — queries are optionally linked to a session
+- `admin_user` → `document` (1:N) — tracks which admin added a document
+- `document` → `chunk` (1:N) — a document is split into multiple chunks at ingestion
+- `chunk` → `topic`, `source`, `college` (N:1 each) — each chunk is tagged with metadata for filtering
+
+**Key design notes**
+
+- `chunk.embedding` is `VECTOR(1536)` — matches OpenAI's `text-embedding-ada-002` output dimension; pgvector handles the similarity search
+- Chunks are created by splitting documents with a 512-token window and 50-token overlap to preserve context across boundaries
+- `user_query.was_answered = false` marks queries logged as "Referral" in the admin Query Logs view
 
 ---
 
