@@ -1,11 +1,10 @@
 import re
 from llama_index.core import VectorStoreIndex
-from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.llms import ChatMessage
 from config import llm
 
-INITIAL_TOP_K = 15   # wide recall per language; deduplicated before reranking
-RERANK_TOP_N = 5     # final chunks passed to the response LLM
+INITIAL_TOP_K = 15   # wide recall per language before merging
+FINAL_TOP_N = 5      # chunks passed to the response LLM after similarity sort
 
 # Arabic Unicode block: U+0600–U+06FF
 _ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
@@ -24,14 +23,12 @@ def _translate(text: str, target_lang: str) -> str:
         "Output the translation only — no explanation, no extra text.\n\n"
         f"{text}"
     )
-    messages = [ChatMessage(role="user", content=prompt)]
-    # Use a direct chat call; the global llm already has temperature=0 from config
-    result = llm.chat(messages)
+    result = llm.chat([ChatMessage(role="user", content=prompt)])
     return result.message.content.strip()
 
 
 def _label_nodes(nodes) -> str:
-    """Joins ranked nodes into a single context string, each labeled with its source page."""
+    """Joins nodes into a single context string, each labeled with its source page."""
     labeled = []
     for i, node in enumerate(nodes, start=1):
         meta = node.metadata or {}
@@ -40,18 +37,23 @@ def _label_nodes(nodes) -> str:
     return "\n\n---\n\n".join(labeled)
 
 
-# Searches the index using both languages and reranks for relevance before returning context
+# Searches the index using both the original and translated query, then returns the top chunks
 def search_query(index: VectorStoreIndex, question: str) -> dict:
-    # Step 1 — detect language and translate to the other language
+    # Step 1 — translate the query to the other language for cross-lingual coverage
     if _is_arabic(question):
         translated = _translate(question, "English")
     else:
         translated = _translate(question, "Arabic")
 
+    print(f"[retrieval] original: {repr(question[:60])}")
+    print(f"[retrieval] translated: {repr(translated[:60])}")
+
     # Step 2 — dual retrieval: original + translated query
     retriever = index.as_retriever(similarity_top_k=INITIAL_TOP_K)
     original_nodes = retriever.retrieve(question)
     translated_nodes = retriever.retrieve(translated)
+
+    print(f"[retrieval] original hits: {len(original_nodes)}, translated hits: {len(translated_nodes)}")
 
     # Step 3 — merge and deduplicate by chunk content
     seen_texts = set()
@@ -62,16 +64,18 @@ def search_query(index: VectorStoreIndex, question: str) -> dict:
             seen_texts.add(content)
             combined.append(node)
 
+    print(f"[retrieval] combined (deduped): {len(combined)} nodes")
+
     if not combined:
         return {"context": "", "source_url": None, "source_name": None}
 
-    # Step 4 — rerank using the original query so relevance is judged in the student's language
-    reranker = LLMRerank(top_n=RERANK_TOP_N, llm=llm)
-    reranked = reranker.postprocess_nodes(combined, query_str=question)
+    # Step 4 — sort by similarity score descending and take the top N
+    top_nodes = sorted(combined, key=lambda n: n.score or 0.0, reverse=True)[:FINAL_TOP_N]
 
-    # Step 5 — label each chunk with its page number and return context plus fixed source metadata
+    print(f"[retrieval] final: {len(top_nodes)} nodes passed to LLM")
+
     return {
-        "context": _label_nodes(reranked),
+        "context": _label_nodes(top_nodes),
         "source_url": "https://www.ku.edu.kw/sites/default/files/2025-09/StudnetGuide25-26.pdf",
         "source_name": "دليل الطالب 2025-2026",
     }
