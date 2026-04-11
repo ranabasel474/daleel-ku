@@ -11,7 +11,7 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 **Backend** — Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
 **Frontend** — React · TypeScript · Tailwind CSS · Vite  
 **Database** — Supabase + pgvector (1536-dim embeddings)  
-**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG orchestration
+**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG pipeline management
 
 ---
 
