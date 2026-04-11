@@ -1,23 +1,13 @@
 from flask import Blueprint, request, jsonify
-from config import supabase, supabase_admin
+from config import supabase, supabase_admin  # supabase for auth, supabase_admin for DB ops
 from auth.jwt import require_auth
 
 admin_bp = Blueprint("admin", __name__)
 
 
+# Authenticates an admin via Supabase Auth and returns a JWT access token
 @admin_bp.route("/login", methods=["POST"])
 def login():
-    """Authenticate an admin user via Supabase Auth.
-
-    Expects a JSON body with 'email' and 'password'. Calls
-    supabase.auth.sign_in_with_password() and returns the JWT
-    access token on success.
-
-    Returns:
-        200: {"access_token": <token>}
-        400: {"error": "email and password are required"} if fields missing
-        401: {"error": "Invalid credentials"} if login fails
-    """
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip()
     password = data.get("password", "")
@@ -33,18 +23,10 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
 
+# Returns all documents from the document table
 @admin_bp.route("/documents", methods=["GET"])
 @require_auth
 def get_documents():
-    """Return all documents from the document table.
-
-    Protected route — requires a valid Bearer token in the
-    Authorization header.
-
-    Returns:
-        200: {"documents": [<document>, ...]}
-        500: {"error": <message>} if the database call fails
-    """
     try:
         response = supabase_admin.table("document").select("*").execute()
         return jsonify({"documents": response.data}), 200
@@ -52,19 +34,10 @@ def get_documents():
         return jsonify({"error": str(e)}), 500
 
 
+# Inserts a new document record
 @admin_bp.route("/documents", methods=["POST"])
 @require_auth
 def add_document():
-    """Add a new document record to the document table.
-
-    Protected route — requires a valid Bearer token in the
-    Authorization header. Expects a JSON body with the document fields.
-
-    Returns:
-        201: {"document": <inserted record>}
-        400: {"error": "Request body is required"} if body is empty
-        500: {"error": <message>} if the database call fails
-    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -76,22 +49,10 @@ def add_document():
         return jsonify({"error": str(e)}), 500
 
 
+# Updates an existing document record by ID
 @admin_bp.route("/documents/<doc_id>", methods=["PUT"])
 @require_auth
 def update_document(doc_id):
-    """Update an existing document record by ID.
-
-    Protected route — requires a valid Bearer token in the
-    Authorization header. Expects a JSON body with the fields to update.
-
-    Args:
-        doc_id: The integer primary key of the document to update.
-
-    Returns:
-        200: {"document": <updated record>}
-        400: {"error": "Request body is required"} if body is empty
-        500: {"error": <message>} if the database call fails
-    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -103,21 +64,10 @@ def update_document(doc_id):
         return jsonify({"error": str(e)}), 500
 
 
+# Deletes a document record by ID
 @admin_bp.route("/documents/<doc_id>", methods=["DELETE"])
 @require_auth
 def delete_document(doc_id):
-    """Delete a document record by ID.
-
-    Protected route — requires a valid Bearer token in the
-    Authorization header.
-
-    Args:
-        doc_id: The integer primary key of the document to delete.
-
-    Returns:
-        200: {"message": "Document deleted"}
-        500: {"error": <message>} if the database call fails
-    """
     try:
         supabase_admin.table("document").delete().eq("document_id", doc_id).execute()
         return jsonify({"message": "Document deleted"}), 200
@@ -125,18 +75,10 @@ def delete_document(doc_id):
         return jsonify({"error": str(e)}), 500
 
 
+# Returns all user_query rows ordered by created_at descending
 @admin_bp.route("/queries", methods=["GET"])
 @require_auth
 def get_queries():
-    """Return all user_query rows ordered by created_at descending.
-
-    Protected route — requires a valid Bearer token in the
-    Authorization header.
-
-    Returns:
-        200: {"queries": [<query>, ...]}
-        500: {"error": <message>} if the database call fails
-    """
     try:
         response = (
             supabase_admin.table("user_query")

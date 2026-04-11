@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
 from supabase import create_client
-from llama_index.llms.openai import OpenAI
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.core import Settings
+from llama_index.llms.openai import OpenAI  # LlamaIndex wrapper for GPT-4o
+from llama_index.embeddings.openai import OpenAIEmbedding  # generates vector embeddings for chunks
+from llama_index.core import Settings  # global config applied to all LlamaIndex components
 
 load_dotenv()
 
@@ -35,7 +35,8 @@ supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 # --- LlamaIndex / OpenAI Setup ---
 llm = OpenAI(
     model="gpt-4o",
-    api_key=OPENAI_API_KEY
+    api_key=OPENAI_API_KEY,
+    temperature=0,  # deterministic — prevents hallucination on grounded RAG responses
 )
 
 embed_model = OpenAIEmbedding(
@@ -43,7 +44,7 @@ embed_model = OpenAIEmbedding(
     api_key=OPENAI_API_KEY
 )
 
-# Apply globally so all LlamaIndex files use same model
+# Apply globally so all LlamaIndex files use the same models
 Settings.llm = llm
 Settings.embed_model = embed_model
 

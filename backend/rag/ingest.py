@@ -1,51 +1,34 @@
-# rag/ingest.py
-# Implements IngestionPipeline from the class diagram.
-# Loads documents from data/, chunks them, generates embeddings,
-# and stores everything in a VectorStoreIndex.
-
 import os
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.readers.file import PyMuPDFReader
-
+from llama_index.core.node_parser import HierarchicalNodeParser, SentenceSplitter, get_leaf_nodes
+from llama_index.readers.file import PyMuPDFReader  # PDF reader for reliable text extraction
 from config import llm, embed_model
 
-# Ensure global Settings use the shared models from config.py
 Settings.llm = llm
 Settings.embed_model = embed_model
 
-# Path to the folder that contains all knowledge-base files (PDFs, text, etc.)
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
+# HierarchicalNodeParser builds three chunk sizes for PDF files:
+# 2048-token parent nodes give broad topic context, 512-token mid nodes provide section context,
+# and 128-token leaf nodes are indexed for retrieval — finer granularity reduces cross-topic bleed.
+_PDF_SPLITTER = HierarchicalNodeParser.from_defaults(chunk_sizes=[2048, 512, 128])
 
+# SentenceSplitter is used as a fallback for plain-text files
+_TEXT_SPLITTER = SentenceSplitter(chunk_size=512, chunk_overlap=50)
+
+
+def _is_pdf_document(doc) -> bool:
+    """Returns True if the document was loaded from a PDF file."""
+    source = doc.metadata.get("file_name") or doc.metadata.get("source") or ""
+    return source.lower().endswith(".pdf")
+
+
+# Reads all files from data/, applies per-format splitting, and returns a VectorStoreIndex
 def build_index():
-    """
-    Loads every file inside the data/ directory, splits the content into
-    chunks, generates embeddings, and returns a VectorStoreIndex.
-
-    Implements IngestionPipeline.ingestSource() and generateEmbedding()
-    from the class diagram.
-
-    Pipeline steps:
-        1. SimpleDirectoryReader reads all supported file types from data/.
-        2. SentenceSplitter breaks documents into 512-token chunks with
-           50-token overlap so sentence boundaries are preserved.
-        3. VectorStoreIndex generates an embedding for every chunk using
-           the text-embedding-3-small model configured in config.py and
-           stores the vectors in an in-memory index.
-
-    Returns:
-        VectorStoreIndex: The built index ready for querying.
-
-    Raises:
-        ValueError: If the data/ directory is empty or missing.
-    """
     if not os.path.isdir(DATA_DIR):
         raise ValueError(f"Data directory not found: {DATA_DIR}")
 
-    # Step 1 — Load all documents from the data/ folder.
-    # PyMuPDFReader is used for PDFs because it handles Arabic fonts and
-    # custom glyph encodings correctly; pypdf (the default) garbles them.
     reader = SimpleDirectoryReader(
         input_dir=DATA_DIR,
         file_extractor={".pdf": PyMuPDFReader()},
@@ -55,13 +38,20 @@ def build_index():
     if not documents:
         raise ValueError("No documents found in the data/ directory.")
 
-    # Step 2 — Chunk documents with SentenceSplitter
-    splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
+    pdf_docs = [d for d in documents if _is_pdf_document(d)]
+    text_docs = [d for d in documents if not _is_pdf_document(d)]
 
-    # Step 3 — Build the vector index (embedding happens automatically)
-    index = VectorStoreIndex.from_documents(
-        documents,
-        transformations=[splitter],
-    )
+    all_nodes = []
 
+    if pdf_docs:
+        # Build hierarchy and index only the leaf nodes (128-token chunks) for retrieval;
+        # parent context is preserved in metadata so the reranker can access it if needed.
+        hierarchy_nodes = _PDF_SPLITTER.get_nodes_from_documents(pdf_docs)
+        all_nodes.extend(get_leaf_nodes(hierarchy_nodes))
+
+    if text_docs:
+        text_nodes = _TEXT_SPLITTER.get_nodes_from_documents(text_docs)
+        all_nodes.extend(text_nodes)
+
+    index = VectorStoreIndex(all_nodes)
     return index

@@ -25,7 +25,7 @@ def test_create_session(client):
     mock_result.data = [{"session_id": fake_id}]
 
     # routes/chat.py imports supabase_admin directly from config, so the
-    # name to patch is routes.chat.supabase_admin.
+    # name to patch is routes.chat.supabase_admin
     with mock.patch("routes.chat.supabase_admin") as mock_admin:
         mock_admin.table.return_value.insert.return_value.execute.return_value = mock_result
         res = client.post("/api/session")

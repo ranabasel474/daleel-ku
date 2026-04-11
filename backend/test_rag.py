@@ -1,4 +1,4 @@
-# test_rag.py — Temporary end-to-end test for the RAG pipeline.
+# test_rag.py — Temporary end-to-end test for the RAG pipeline
 # Run from backend/ with the venv activated:
 #   python test_rag.py
 
@@ -11,9 +11,9 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-# config.py requires SUPABASE_KEY (anon key) but it is missing from .env.
+# config.py requires SUPABASE_KEY (anon key) but it is missing from .env
 # The RAG pipeline does not use Supabase, so fall back to the service key
-# just to satisfy the startup check. Remove once .env has the real anon key.
+# just to satisfy the startup check. Remove once .env has the real anon key
 if not os.environ.get("SUPABASE_KEY"):
     os.environ["SUPABASE_KEY"] = os.environ.get("SUPABASE_SERVICE_KEY", "placeholder")
 
