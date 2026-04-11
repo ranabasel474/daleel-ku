@@ -73,6 +73,10 @@ def search_query(index: VectorStoreIndex, question: str) -> dict:
     top_nodes = sorted(combined, key=lambda n: n.score or 0.0, reverse=True)[:FINAL_TOP_N]
 
     print(f"[retrieval] final: {len(top_nodes)} nodes passed to LLM")
+    for i, n in enumerate(top_nodes, 1):
+        meta = n.metadata or {}
+        page = meta.get("page_label") or meta.get("page") or meta.get("source") or "?"
+        print(f"  [{i}] score={n.score:.3f} page={page} | {n.get_content()[:200]}")
 
     return {
         "context": _label_nodes(top_nodes),
