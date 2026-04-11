@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AcademicBotLogo from "@/components/AcademicBotLogo";
 
-// Splash screen: displays logo and app name, then auto-navigates to /chat after a fade-out.
+//Splash screen that fades out and navigates to /chat automatically
 const Landing = () => {
   const navigate = useNavigate();
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    // Two timers so the fade transition (500 ms) completes before navigation unmounts the component.
+    //Two timers so the 500 ms fade finishes before navigation removes the component
     const fadeTimer = setTimeout(() => {
       setFading(true);
     }, 1700);
@@ -17,7 +17,7 @@ const Landing = () => {
       navigate("/chat");
     }, 2210);
 
-    // Prevents state updates on an unmounted component if the user navigates away early.
+    //Cancels both timers if the user navigates away before the intro finishes
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(navTimer);
@@ -35,7 +35,7 @@ const Landing = () => {
           fontFamily: "'Somar', sans-serif",
           color: "#F8D81B",
           opacity: 0,
-          // Starts hidden; keyframe reveals it after the logo has settled.
+          //Delayed 0.6s so the logo settles before the title appears
           animation: "landingTextIn 0.5s ease-out 0.6s forwards",
         }}
         className="text-4xl font-bold mt-4 text-center tracking-wide"
@@ -48,7 +48,7 @@ const Landing = () => {
           color: "#F8D81B",
           direction: "rtl",
           opacity: 0,
-          // 150 ms after the title to stagger the entrance.
+          //150ms after the title so the subtitle appears in sequence
           animation: "landingTextIn 0.5s ease-out 0.75s forwards",
         }}
         className="mt-2 text-center text-base"
