@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, MicOff, SendHorizontal, X, Check } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Mic, MicOff, SendHorizontal, X, Check } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -11,23 +11,28 @@ const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [waveHeights, setWaveHeights] = useState<number[]>(Array(24).fill(0.15));
+  const [waveHeights, setWaveHeights] = useState<number[]>(
+    Array(24).fill(0.15),
+  );
   const { t, isRTL, lang } = useLanguage();
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const waveRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const transcriptRef = useRef('');
+  const transcriptRef = useRef("");
   const shouldRestartRef = useRef(false);
 
   useEffect(() => {
     if (isRecording) {
       setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime(prev => prev + 1), 1000);
+      timerRef.current = setInterval(
+        () => setRecordingTime((prev) => prev + 1),
+        1000,
+      );
       waveRef.current = setInterval(() => {
-        setWaveHeights(prev => {
+        setWaveHeights((prev) => {
           const next = [...prev];
           // Shift left, add new bar on right
           next.shift();
@@ -47,31 +52,32 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     };
   }, [isRecording]);
 
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const handleSend = () => {
     if (!text.trim() || disabled) return;
     onSend(text.trim());
-    setText('');
+    setText("");
   };
 
   const startRecording = useCallback(() => {
     if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser.');
+      alert("Speech recognition is not supported in this browser.");
       return;
     }
 
-    transcriptRef.current = '';
+    transcriptRef.current = "";
     shouldRestartRef.current = true;
     const recognition = new SpeechRecognition();
-    recognition.lang = lang === 'ar' ? 'ar-KW' : 'en-US';
+    recognition.lang = lang === "ar" ? "ar-KW" : "en-US";
     recognition.interimResults = true;
     recognition.continuous = true;
     recognitionRef.current = recognition;
 
     recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
+      let finalTranscript = "";
+      let interimTranscript = "";
       for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
@@ -85,7 +91,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
 
     recognition.onerror = (event: any) => {
       // Ignore no-speech errors — just let it restart
-      if (event.error === 'no-speech') return;
+      if (event.error === "no-speech") return;
       shouldRestartRef.current = false;
       setIsRecording(false);
     };
@@ -94,7 +100,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
       if (shouldRestartRef.current) {
         try {
           const newRecognition = new SpeechRecognition();
-          newRecognition.lang = lang === 'ar' ? 'ar-KW' : 'en-US';
+          newRecognition.lang = lang === "ar" ? "ar-KW" : "en-US";
           newRecognition.interimResults = true;
           newRecognition.continuous = true;
           newRecognition.onresult = recognition.onresult;
@@ -118,7 +124,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const cancelRecording = useCallback(() => {
     shouldRestartRef.current = false;
     recognitionRef.current?.stop();
-    transcriptRef.current = '';
+    transcriptRef.current = "";
     setIsRecording(false);
   }, []);
 
@@ -128,7 +134,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     setIsRecording(false);
     const transcript = transcriptRef.current.trim();
     if (transcript) {
-      setText(prev => (prev ? prev + ' ' + transcript : transcript));
+      setText((prev) => (prev ? prev + " " + transcript : transcript));
     }
   }, []);
 
@@ -182,21 +188,36 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
           </div>
         ) : (
           <>
-            <div className="relative flex items-center">
-              <input
-                type="text"
+            <div className="relative flex items-end">
+              <textarea
                 dir="auto"
+                rows={1}
                 value={text}
-                onChange={(e) => { if (e.target.value.length <= MAX_CHARS) setText(e.target.value); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_CHARS)
+                    setText(e.target.value);
+                  // Auto-resize
+                  e.target.style.height = "auto";
+                  e.target.style.height =
+                    Math.min(e.target.scrollHeight, 160) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder={t.placeholder}
                 aria-label={t.inputAriaLabel}
                 disabled={disabled}
                 maxLength={MAX_CHARS}
-                className={`w-full bg-secondary rounded-full py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring/40 transition-shadow font-arabic hc-input ${isRTL ? 'pr-4 pl-24 text-right' : 'pl-4 pr-24 text-left'}`}
+                className={`w-full bg-secondary rounded-2xl py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring/40 transition-shadow font-arabic hc-input resize-none overflow-y-auto ${isRTL ? "pr-4 pl-24 text-right" : "pl-4 pr-24 text-left"}`}
+                style={{ maxHeight: "160px" }}
               />
 
-              <div className={`absolute flex items-center gap-1 ${isRTL ? 'left-2' : 'right-2'}`}>
+              <div
+                className={`absolute flex items-center gap-1 ${isRTL ? "left-2" : "right-2"}`}
+              >
                 <button
                   onClick={startRecording}
                   className="p-2 rounded-full transition-colors text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
@@ -210,14 +231,22 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
                   className="bg-send-btn text-primary-foreground p-2 rounded-full hover:opacity-90 transition-opacity disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none hc-btn"
                   aria-label={t.send}
                 >
-                  <SendHorizontal size={16} className={isRTL ? 'rotate-180' : ''} aria-hidden="true" />
+                  <SendHorizontal
+                    size={16}
+                    className={isRTL ? "rotate-180" : ""}
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
             </div>
 
             {showCounter && (
-              <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} px-3`}>
-                <span className={`text-[11px] tabular-nums ${isOverLimit ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              <div
+                className={`flex ${isRTL ? "justify-start" : "justify-end"} px-3`}
+              >
+                <span
+                  className={`text-[11px] tabular-nums ${isOverLimit ? "text-destructive font-medium" : "text-muted-foreground"}`}
+                >
                   {charCount}/{MAX_CHARS}
                 </span>
               </div>
