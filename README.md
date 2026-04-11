@@ -8,10 +8,10 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 
 ## Tech Stack
 
-**Backend** — Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
-**Frontend** — React · TypeScript · Tailwind CSS · Vite  
-**Database** — Supabase + pgvector (1536-dim embeddings)  
-**AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG orchestration
+**Backend**: Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
+**Frontend**: React · TypeScript · Tailwind CSS · Vite  
+**Database**: Supabase
+**AI**: OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG orchestration
 
 ---
 
@@ -20,7 +20,7 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 ```
 daleel-ku/
 ├── backend/
-│   ├── app.py              # Flask application factory
+│   ├── app.py              # Flask application
 │   ├── config.py           # Shared state: supabase, llm, embed_model
 │   ├── routes/
 │   │   ├── chat.py         # POST /api/query, POST /api/session
@@ -48,7 +48,7 @@ daleel-ku/
 ### Prerequisites
 
 - Python 3.10+
-- Node.js 18+ (or Bun)
+- Node.js 
 - A Supabase project with pgvector enabled
 - An OpenAI API key
 
