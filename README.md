@@ -9,7 +9,7 @@ Students ask questions in Arabic or English and get answers sourced directly fro
 ## Tech Stack
 
 **Backend** — Flask · LlamaIndex · GPT-4o · Supabase (pgvector) · Flask-Limiter  
-**Frontend** — React · TypeScript · Tailwind CSS · shadcn/ui · Vite  
+**Frontend** — React · TypeScript · Tailwind CSS · Vite  
 **Database** — Supabase + pgvector (1536-dim embeddings)  
 **AI** — OpenAI GPT-4o for generation and query classification, LlamaIndex for RAG orchestration
 
@@ -29,7 +29,7 @@ daleel-ku/
 │   │   └── jwt.py          # JWT verify/issue for admin auth
 │   ├── rag/
 │   │   ├── ingest.py       # Document ingestion → VectorStoreIndex
-│   │   ├── query_engine.py # pgvector similarity search (top-3 chunks)
+│   │   ├── query_engine.py # pgvector similarity search
 │   │   └── response.py     # Bilingual GPT-4o response generation
 │   └── ingestion/
 │       ├── pdf.py          # PyMuPDF text + image extraction
