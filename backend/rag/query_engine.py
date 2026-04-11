@@ -9,6 +9,14 @@ FINAL_TOP_N = 5      # chunks passed to the response LLM after similarity sort
 # Arabic Unicode block: U+0600–U+06FF
 _ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
 
+# Must match the same pattern used in ingest.py so query and indexed text are normalized identically
+_ARABIC_NOISE = re.compile(r"[\u0640\u064b-\u065f\u0610-\u061a]")
+
+
+def _clean_arabic(text: str) -> str:
+    """Strips kashida and diacritics — same normalization applied to indexed documents."""
+    return _ARABIC_NOISE.sub("", text)
+
 
 def _is_arabic(text: str) -> bool:
     """Returns True if the text contains enough Arabic characters to be considered Arabic."""
@@ -48,10 +56,14 @@ def search_query(index: VectorStoreIndex, question: str) -> dict:
     print(f"[retrieval] original: {repr(question[:60])}")
     print(f"[retrieval] translated: {repr(translated[:60])}")
 
-    # Step 2 — dual retrieval: original + translated query
+    # Step 2 — dual retrieval: clean both queries then retrieve
+    # Cleaning must match ingest.py normalization so embeddings are comparable
+    clean_question = _clean_arabic(question)
+    clean_translated = _clean_arabic(translated)
+
     retriever = index.as_retriever(similarity_top_k=INITIAL_TOP_K)
-    original_nodes = retriever.retrieve(question)
-    translated_nodes = retriever.retrieve(translated)
+    original_nodes = retriever.retrieve(clean_question)
+    translated_nodes = retriever.retrieve(clean_translated)
 
     print(f"[retrieval] original hits: {len(original_nodes)}, translated hits: {len(translated_nodes)}")
 
