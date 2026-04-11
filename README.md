@@ -76,25 +76,20 @@ npm run dev                  # Vite dev server on http://localhost:5173
 
 ## Environment Variables
 
-Create `backend/.env` from the example file. The following are required — the app will raise an error on startup if any are missing:
+Create `backend/.env` from the example file. Variables marked **required** will raise an error on startup if missing.
 
-| Variable | Where to get it |
-|---|---|
-| `OPENAI_API_KEY` | platform.openai.com |
-| `SUPABASE_URL` | Supabase dashboard → Settings → API |
-| `SUPABASE_KEY` | Use the legacy anon key (starts with `eyJ`) |
-| `SUPABASE_JWT_SECRET` | Supabase dashboard → Settings → API → JWT Settings |
-
-Optional variables (for integrations not yet active):
-
-```
-FIRECRAWL_API_KEY=
-APIFY_API_KEY=
-JWT_ALGORITHM=HS256
-JWT_EXPIRY_HOURS=8
-FLASK_DEBUG=true
-FRONTEND_URL=http://localhost:5173
-```
+| Variable | Default | Where to get it |
+|---|---|---|
+| `OPENAI_API_KEY` | **required** | platform.openai.com |
+| `SUPABASE_URL` | **required** | Supabase dashboard → Settings → API |
+| `SUPABASE_KEY` | **required** | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
+| `SUPABASE_JWT_SECRET` | **required** | Supabase dashboard → Settings → API → JWT Settings |
+| `FIRECRAWL_API_KEY` | — | firecrawl.dev → Dashboard → API Keys |
+| `APIFY_API_KEY` | — | apify.com → Settings → Integrations |
+| `JWT_ALGORITHM` | `HS256` | — |
+| `JWT_EXPIRY_HOURS` | `8` | — |
+| `FLASK_DEBUG` | `false` | — |
+| `FRONTEND_URL` | `http://localhost:5173` | — |
 
 ---
 
