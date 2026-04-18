@@ -2,14 +2,12 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address  # identifies clients by IP for rate limiting
+from flask_limiter.util import get_remote_address
 
-# Must be defined at module level before any blueprint is imported
-# routes/chat.py does "from app import limiter", so limiter must exist first
+#Rate limiter shared across routes
 limiter = Limiter(get_remote_address)
 
-
-# Creates and configures the Flask app with extensions and blueprints
+#Creates the Flask app and registers extensions and routes
 def create_app():
     app = Flask(__name__)
 
@@ -17,7 +15,7 @@ def create_app():
 
     limiter.init_app(app)
 
-    # Imported inside the factory to avoid circular imports — limiter must exist before these load
+    #Import blueprints here so limiter is available in routes
     from routes.chat import chat_bp
     from routes.admin import admin_bp
 
@@ -46,7 +44,6 @@ def create_app():
         return jsonify({"error": "An internal server error occurred."}), 500
 
     return app
-
 
 if __name__ == "__main__":
     app = create_app()
