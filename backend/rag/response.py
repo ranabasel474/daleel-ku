@@ -1,8 +1,8 @@
 import json
-from llama_index.core.llms import ChatMessage  # structures system/user messages for LLM chat calls
+from llama_index.core.llms import ChatMessage
 from config import llm
 
-# Injected into the system prompt and returned verbatim by the LLM when the context lacks an answer
+#Fallback replies used when the context does not contain the needed answer
 FALLBACK_AR = (
     "لم أجد معلومات كافية حول هذا الموضوع في المصادر المتاحة. "
     "يرجى مراجعة الدليل الأكاديمي الرسمي أو التواصل مع الإرشاد الأكاديمي."
@@ -12,7 +12,7 @@ FALLBACK_EN = (
     "Please refer to the official academic guide or contact academic advising."
 )
 
-# The LLM must respond with JSON so was_answered can be read directly from the model's output
+#System prompt for grounded question answering with strict JSON output
 SYSTEM_PROMPT = (
     "You are Daleel, an academic assistant for Kuwait University students.\n\n"
     "## GROUNDING RULES:\n"
@@ -36,6 +36,7 @@ SYSTEM_PROMPT = (
     '{"was_answered": true/false, "answer": "..."}'
 )
 
+#System prompt for handling GPA calculation questions
 GPA_SYSTEM_PROMPT = (
     "You are a Kuwait University academic assistant chatbot.\n\n"
     "## GPA Calculation Rules\n\n"
@@ -66,8 +67,7 @@ GPA_SYSTEM_PROMPT = (
     "Please verify with your official academic record."
 )
 
-
-# Handles GPA queries by passing the KU grade scale directly to the LLM
+#Handles GPA questions directly using the KU grade scale prompt
 def handle_gpa_query(query: str) -> dict:
     messages = [
         ChatMessage(role="system", content=GPA_SYSTEM_PROMPT),
@@ -79,17 +79,14 @@ def handle_gpa_query(query: str) -> dict:
 
     return {"answer": answer, "was_answered": True}
 
-
-# Generates a grounded response from retrieved context.
-# search_result is the dict returned by search_query():
-#   {"context": str, "source_url": str|None, "source_name": str|None}
+#Builds a grounded answer from retrieved context and returns answer metadata
 def generate_response(search_result: dict, query: str) -> dict:
     context = search_result.get("context", "")
     source_url = search_result.get("source_url")
     source_name = search_result.get("source_name")
 
     if not context or not context.strip():
-        # Returns fallback if context is empty
+        #No context means we must return fallback text
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
         return {"answer": fallback_text, "was_answered": False, "source_url": None, "source_name": None}
 
@@ -110,11 +107,11 @@ def generate_response(search_result: dict, query: str) -> dict:
         answer = parsed.get("answer", "").strip()
         was_answered = bool(parsed.get("was_answered", False))
     except (json.JSONDecodeError, AttributeError):
-        # If the model didn't return valid JSON, surface raw text and flag as unanswered
+        #If model output is not valid JSON, return raw text and mark unanswered
         answer = raw
         was_answered = False
 
-    # Append source citation only when the question was actually answered
+    #Add source citation only when we have a valid answered result
     if was_answered and source_name and source_url:
         answer = f"{answer}\n\nالمصدر: [{source_name}]({source_url})"
 

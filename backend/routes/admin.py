@@ -1,11 +1,10 @@
 from flask import Blueprint, request, jsonify
-from config import supabase, supabase_admin  # supabase for auth, supabase_admin for DB ops
+from config import supabase, supabase_admin
 from auth.jwt import require_auth
 
 admin_bp = Blueprint("admin", __name__)
 
-
-# Authenticates an admin via Supabase Auth and returns a JWT access token
+#Authenticates an admin via Supabase Auth and returns a JWT access token
 @admin_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
@@ -22,8 +21,7 @@ def login():
     except Exception:
         return jsonify({"error": "Invalid credentials"}), 401
 
-
-# Returns all documents from the document table
+#Returns all documents from the document table
 @admin_bp.route("/documents", methods=["GET"])
 @require_auth
 def get_documents():
@@ -33,8 +31,7 @@ def get_documents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Inserts a new document record
+#Inserts a new document record
 @admin_bp.route("/documents", methods=["POST"])
 @require_auth
 def add_document():
@@ -48,8 +45,7 @@ def add_document():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Updates an existing document record by ID
+#Updates an existing document record by ID
 @admin_bp.route("/documents/<doc_id>", methods=["PUT"])
 @require_auth
 def update_document(doc_id):
@@ -63,8 +59,7 @@ def update_document(doc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Deletes a document record by ID
+#Deletes an existing document record by ID
 @admin_bp.route("/documents/<doc_id>", methods=["DELETE"])
 @require_auth
 def delete_document(doc_id):
@@ -74,8 +69,7 @@ def delete_document(doc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Returns all user_query rows ordered by created_at descending
+#Returns all user_query rows ordered by created_at descending
 @admin_bp.route("/queries", methods=["GET"])
 @require_auth
 def get_queries():

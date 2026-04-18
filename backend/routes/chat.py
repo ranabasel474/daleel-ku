@@ -1,35 +1,35 @@
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
-from openai import OpenAI as OpenAIClient  # direct OpenAI client used only for query classification
-from app import limiter  # rate limiter instance defined at module level in app.py
+from openai import OpenAI as OpenAIClient
+from app import limiter
 from config import supabase_admin, OPENAI_API_KEY
 from rag.ingest import build_index
 from rag.query_engine import search_query
 from rag.response import generate_response, handle_gpa_query
 
-# Used only for query type classification — kept separate from the LlamaIndex llm in config
+#OpenAI client used only to classify the query type
 _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 
 index = build_index()
 
 chat_bp = Blueprint("chat", __name__)
 
-MAX_QUERY_LENGTH = 1000  # characters
+MAX_QUERY_LENGTH = 1000
 
-# Validates the student query before processing — returns (is_valid, error_message)
+#Validates the student query before processing
 def validate_query(text):
-    # Reject empty or whitespace-only input
+    #Reject empty input
     if not text or not text.strip():
         return False, "Query can't be empty."
     
-    # Reject queries exceeding the character limit to prevent prompt injection
+    #Reject input that is too long
     if len(text) > MAX_QUERY_LENGTH:
         return False, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
     
     return True, None
 
 
-# Classifies the query as 'gpa' or 'general' using GPT-4o
+#Classifies the query as 'gpa' or 'general' using GPT-4o
 def detect_query_type(text):
     classification_prompt = (
         "You are a query classifier for a Kuwait University academic chatbot. "
@@ -44,8 +44,8 @@ def detect_query_type(text):
         result = _openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": classification_prompt}],
-            max_tokens=5,   # only one word expected back
-            temperature=0,  # deterministic — classification must be consistent
+            max_tokens=5,
+            temperature=0,
         )
         label = result.choices[0].message.content.strip().lower()
         return "gpa" if label == "gpa" else "general"
@@ -55,7 +55,7 @@ def detect_query_type(text):
         return "general"
 
 
-# Receives a student question, routes it through RAG or GPA handler, logs it, and returns the response
+#Handles student questions, logs them, and returns a response
 @chat_bp.route("/query", methods=["POST"])
 @limiter.limit("30 per minute")
 def query():
@@ -93,7 +93,7 @@ def query():
         supabase_admin.table("user_query").insert(log_entry).execute()
 
     except Exception as e:
-        # Logging failure must not block the student from receiving their response
+        #Logging failure must not block the student from receiving their response
         print(f"Warning: failed to log query to Supabase — {e}")
 
     return jsonify({
@@ -104,7 +104,7 @@ def query():
     }), 200
 
 
-# Creates a new session row and returns the session_id
+#Creates a new session row and returns the session_id
 @chat_bp.route("/session", methods=["POST"])
 def create_session():
     try:
@@ -120,7 +120,7 @@ def create_session():
         return jsonify({"error": "Could not create a new session."}), 500
 
 
-# Closes a session by writing the ended_at timestamp
+#Ends a session by setting ended_at
 @chat_bp.route("/session/<session_id>", methods=["PATCH"])
 def end_session(session_id):
     try:

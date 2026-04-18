@@ -1,11 +1,7 @@
 import uuid
 from unittest import mock
 
-
-# ---------------------------------------------------------------------------
-# 1. GET / — health check
-# ---------------------------------------------------------------------------
-
+#Checks that the health endpoint returns 200
 def test_health_check(client):
     res = client.get("/")
     assert res.status_code == 200
@@ -13,19 +9,14 @@ def test_health_check(client):
     assert data["status"] == "running"
     assert "system" in data
 
-
-# ---------------------------------------------------------------------------
-# 2. POST /api/session — 201 with a valid UUID session_id
-# ---------------------------------------------------------------------------
-
+#Checks that creating a session returns 201 and a valid session ID
 def test_create_session(client):
     fake_id = str(uuid.uuid4())
 
     mock_result = mock.MagicMock()
     mock_result.data = [{"session_id": fake_id}]
 
-    # routes/chat.py imports supabase_admin directly from config, so the
-    # name to patch is routes.chat.supabase_admin
+    #Patch the name used inside routes.chat
     with mock.patch("routes.chat.supabase_admin") as mock_admin:
         mock_admin.table.return_value.insert.return_value.execute.return_value = mock_result
         res = client.post("/api/session")
@@ -33,13 +24,9 @@ def test_create_session(client):
     assert res.status_code == 201
     data = res.get_json()
     assert "session_id" in data
-    uuid.UUID(data["session_id"])  # raises ValueError if not a valid UUID
+    uuid.UUID(data["session_id"])
 
-
-# ---------------------------------------------------------------------------
-# 3. POST /api/query — valid message → 200 with response field
-# ---------------------------------------------------------------------------
-
+#Checks that a valid query returns 200 and a response
 def test_query_valid(client):
     mock_log = mock.MagicMock()
     mock_log.data = []
@@ -63,31 +50,19 @@ def test_query_valid(client):
     assert data["response"] == "Test answer."
     assert data["was_answered"] is True
 
-
-# ---------------------------------------------------------------------------
-# 4. POST /api/query — empty message → 400
-# ---------------------------------------------------------------------------
-
+#Checks that an empty query returns 400
 def test_query_empty_message(client):
     res = client.post("/api/query", json={"message": ""})
     assert res.status_code == 400
     assert "error" in res.get_json()
 
-
-# ---------------------------------------------------------------------------
-# 5. POST /api/query — message over 1000 chars → 400
-# ---------------------------------------------------------------------------
-
+#Checks that an overly long query (>1000 characters) returns 400
 def test_query_too_long(client):
     res = client.post("/api/query", json={"message": "a" * 1001})
     assert res.status_code == 400
     assert "error" in res.get_json()
 
-
-# ---------------------------------------------------------------------------
-# 6. GET /api/admin/documents — no auth token → 401
-# ---------------------------------------------------------------------------
-
+#Checks that admin documents return 401 without auth
 def test_admin_documents_no_auth(client):
     res = client.get("/api/admin/documents")
     assert res.status_code == 401
