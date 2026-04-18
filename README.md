@@ -31,7 +31,7 @@ daleel-ku/
 │   │   ├── query_engine.py # pgvector similarity search
 │   │   └── response.py     # Bilingual GPT-4o response generation
 │   └── ingestion/
-│       ├── pdf.py          # PyMuPDF text + image extraction
+│       ├── pdf.py          # LlamaParse PDF extraction (vision-based)
 │       ├── scraper.py      # Firecrawl web crawling
 │       └── social.py       # Apify social media scraping
 └── frontend/
@@ -50,6 +50,9 @@ daleel-ku/
 - Node.js
 - A Supabase project with pgvector enabled
 - An OpenAI API key
+- A Llama Cloud API key (for LlamaParse PDF extraction)
+- A Firecrawl API key (for web crawling)
+- An Apify API key (for social media scraping)
 
 ### Backend
 
@@ -77,18 +80,19 @@ npm run dev                  # Vite dev server on http://localhost:5173
 
 Create `backend/.env` from the example file. Variables marked **required** will raise an error on startup if missing.
 
-| Variable              | Default                 | Where to get it                                                                   |
-| --------------------- | ----------------------- | --------------------------------------------------------------------------------- |
-| `OPENAI_API_KEY`      | **required**            | platform.openai.com                                                               |
-| `SUPABASE_URL`        | **required**            | Supabase dashboard → Settings → API                                               |
-| `SUPABASE_KEY`        | **required**            | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
-| `SUPABASE_JWT_SECRET` | **required**            | Supabase dashboard → Settings → API → JWT Settings                                |
-| `FIRECRAWL_API_KEY`   | optional                | firecrawl.dev → Dashboard → API Keys                                              |
-| `APIFY_API_KEY`       | optional                | apify.com → Settings → Integrations                                               |
-| `JWT_ALGORITHM`       | `HS256`                 | —                                                                                 |
-| `JWT_EXPIRY_HOURS`    | `8`                     | —                                                                                 |
-| `FLASK_DEBUG`         | `false`                 | —                                                                                 |
-| `FRONTEND_URL`        | `http://localhost:5173` | —                                                                                 |
+| Variable               | Default                 | Where to get it                                                                   |
+| ---------------------- | ----------------------- | --------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`       | **required**            | platform.openai.com                                                               |
+| `SUPABASE_URL`         | **required**            | Supabase dashboard → Settings → API                                               |
+| `SUPABASE_KEY`         | **required**            | Supabase dashboard → Settings → API (use the legacy anon key starting with `eyJ`) |
+| `SUPABASE_SERVICE_KEY` | **required**            | Supabase dashboard → Settings → API (service role key)                            |
+| `LLAMA_CLOUD_API_KEY`  | **required**            | cloud.llamaindex.ai → API Keys (free tier available)                              |
+| `FIRECRAWL_API_KEY`    | optional                | firecrawl.dev → Dashboard → API Keys                                              |
+| `APIFY_API_KEY`        | optional                | apify.com → Settings → Integrations                                               |
+| `JWT_ALGORITHM`        | `HS256`                 | —                                                                                 |
+| `JWT_EXPIRY_HOURS`     | `8`                     | —                                                                                 |
+| `FLASK_DEBUG`          | `false`                 | —                                                                                 |
+| `FRONTEND_URL`         | `http://localhost:5173` | —                                                                                 |
 
 ---
 
@@ -102,6 +106,8 @@ When a student submits a question:
 4. **General queries** go through the RAG pipeline: embed → pgvector search → top-5 chunks → GPT-4o response
 5. The query and response are logged anonymously to the `user_query` table
 6. The response is returned with a `was_answered` flag (if `false`, the student is redirected to the relevant KU department)
+
+The pipeline supports bilingual input. Arabic and English queries are both supported, and responses mirror the input language.
 
 ---
 
@@ -249,7 +255,7 @@ Returns all logged student queries, ordered newest first.
 ## Security
 
 - **Rate limiting**: 30 requests/min on `POST /api/query` only
-- **JWT auth**: all admin routes require a valid Supabase-issued JWT verified against `SUPABASE_JWT_SECRET`
+- **JWT auth**: all admin routes require a valid Supabase-issued JWT (verified via Supabase Auth)
 - **Input validation**: query length capped at 1000 chars; system prompt and user input are always kept structurally separate in the OpenAI API call
 - **CORS**: restricted to `FRONTEND_URL`
 - **No PII**: GPA inputs are session-only and never persisted
@@ -261,4 +267,10 @@ Returns all logged student queries, ordered newest first.
 - **University-wide**: general information relevant to all KU students
 - **CLS-specific**: detailed academic guidance for College of Life Sciences students
 
-Content is ingested from PDFs, web pages (via Firecrawl), and social media (via Apify + GPT-4o Vision for OCR).
+Content is ingested from PDFs (via LlamaParse), web pages (via Firecrawl), and social media (via Apify + GPT-4o Vision for OCR).
+
+---
+
+## Known Limitations
+
+- Arabic RTL tables: column ordering can be swapped in some cases when parsing PDFs.

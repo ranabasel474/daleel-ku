@@ -10,10 +10,11 @@ supabase
 # RAG & AI
 llama-index
 llama-index-vector-stores-supabase
+llama-index-readers-file
 openai
 
 # PDF extraction
-pymupdf
+llama-parse
 
 # Web scraping
 firecrawl-py
@@ -23,3 +24,6 @@ apify-client
 
 # Admin password hashing
 bcrypt
+
+# Testing
+pytest

@@ -49,6 +49,10 @@ Settings.llm = llm
 Settings.embed_model = embed_model
 
 # --- External Ingestion API Keys ---
+LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
+if not LLAMA_CLOUD_API_KEY:
+    raise ValueError("LLAMA_CLOUD_API_KEY environment variable is not set")
+
 # Uncomment when Firecrawl API key is available
 # FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
 # if not FIRECRAWL_API_KEY:
