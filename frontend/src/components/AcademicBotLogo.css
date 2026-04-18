@@ -1,3 +1,4 @@
+/* Default animated logo style used in chat and header. */
 .academic-bot-logo {
   width: 120px;
   height: auto;
@@ -6,6 +7,7 @@
   transform-origin: center;
 }
 
+/* Static variant for places where motion should be disabled. */
 .academic-bot-logo--static {
   animation: none;
   transform: scale(1);
@@ -16,16 +18,19 @@
   animation: none;
 }
 
+/* Logo pop-in on first render. */
 @keyframes growIn {
   0% { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Repeating eye blink for the animated logo. */
 @keyframes blink {
   0%, 90%, 100% { transform: scaleY(1); }
   95% { transform: scaleY(0.1); }
 }
 
+/* One quick blink used on the landing screen intro. */
 @keyframes blinkOnce {
   0%, 100% { transform: scaleY(1); }
   50% { transform: scaleY(0.1); }
@@ -38,11 +43,12 @@
   animation-delay: 0.8s;
 }
 
-/* Landing page: single fast blink right after grow-in */
+/* Landing page: run one blink after the grow-in animation. */
 .landing-logo .right-eye {
   animation: blinkOnce 0.4s ease-in-out 0.8s 1 !important;
 }
 
+/* Title/subtitle fade up animation used on landing page text. */
 @keyframes landingTextIn {
   0% { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0); }

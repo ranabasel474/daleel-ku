@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+//Renders the admin sign-in view and manages local credential/error UI state.
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
@@ -13,20 +14,22 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
+  //Handles form submit by validating inputs and routing on successful auth.
   const handleLogin = (e: React.FormEvent) => {
+    // Prevent page refresh so auth feedback stays in React state.
     e.preventDefault();
     if (!username || !password) {
       setError('Please enter your username and password');
       return;
     }
-    // Mock auth — replace with Supabase Auth
+    //Mock auth — replace with Supabase Auth
     if (username === 'admin' && password === 'admin') {
       navigate('/admin');
     } else {
       setError('Invalid username or password');
     }
   };
-
+//Renders the admin sign-in view and manages local credential/error UI state.
   return (
     <div className="min-h-dvh bg-background flex items-center justify-center p-4" dir="ltr">
       <div className="w-full max-w-sm">

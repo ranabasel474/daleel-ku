@@ -16,6 +16,7 @@ import AdminLayout from "./components/admin/AdminLayout.tsx";
 
 const queryClient = new QueryClient();
 
+//Root app component that provides all context providers and routes
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>

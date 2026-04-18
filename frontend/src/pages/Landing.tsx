@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AcademicBotLogo from "@/components/AcademicBotLogo";
 
-//Splash screen that fades out and navigates to /chat automatically
+//Short introductory animation that navigates to the main chat interface.
 const Landing = () => {
   const navigate = useNavigate();
   const [fading, setFading] = useState(false);

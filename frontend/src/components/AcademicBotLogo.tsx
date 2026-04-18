@@ -1,5 +1,6 @@
 import './AcademicBotLogo.css';
 
+//Props to control logo size, color, animation mode, and accessibility labeling.
 interface AcademicBotLogoProps {
   size?: number;
   color?: string;
@@ -8,7 +9,9 @@ interface AcademicBotLogoProps {
   ariaLabel?: string;
 }
 
+// Shows the Daleel KU SVG logo.
 export default function AcademicBotLogo({ size, color, animated = true, className: extraClass, ariaLabel }: AcademicBotLogoProps) {
+  //Use a static style when animation is off, then add any extra class name.
   const className = `${animated ? 'academic-bot-logo' : 'academic-bot-logo academic-bot-logo--static'}${extraClass ? ` ${extraClass}` : ''}`;
   const style: React.CSSProperties = {};
   if (size) style.width = `${size}px`;
@@ -25,6 +28,7 @@ export default function AcademicBotLogo({ size, color, animated = true, classNam
       strokeLinejoin="round"
       className={className}
       style={style}
+      //With ariaLabel, screen readers read this SVG as an image; without it, they ignore it as decoration.
       role={ariaLabel ? 'img' : 'presentation'}
       aria-label={ariaLabel}
       aria-hidden={ariaLabel ? undefined : 'true'}

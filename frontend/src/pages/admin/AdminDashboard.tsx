@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { allQueries } from '@/pages/admin/AdminQueries';
 
+//Static Data for demo purposes until we connect the backend.
 const initialDocs = [
   { id: 1, title: 'KU Official Website', type: 'URL', topic: 'Student Services', college: 'All Colleges', dateAdded: '2025-03-20' },
   { id: 2, title: 'Vice Dean for Student Affairs for CLS', type: 'URL', topic: 'Student Services', college: 'CLS', dateAdded: '2025-03-18' },
@@ -15,6 +16,7 @@ const initialDocs = [
   { id: 4, title: 'Student Handbook 2025/2026', type: 'PDF', topic: 'Regulations', college: 'All Colleges', dateAdded: '2025-03-12' },
 ];
 
+//Renders the admin overview with aggregate metrics plus recent query/content snapshots.
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
@@ -23,9 +25,12 @@ const AdminDashboard = () => {
   const answeredCount = allQueries.filter((q) => q.status === 'answered').length;
   const referralCount = allQueries.filter((q) => q.status === 'referral').length;
 
+  //Show the newest queries first while keeping the source array unchanged.
   const recentQueries = allQueries.slice(-5).reverse();
+  //Sort by ISO date string and keep only the latest three entries for the summary table.
   const recentDocs = [...initialDocs].sort((a, b) => b.dateAdded.localeCompare(a.dateAdded)).slice(0, 3);
 
+  //Keeps card rendering declarative so labels/icons/counts stay in one place.
   const stats = [
     { label: 'Total Documents', value: totalDocs, icon: FileText, color: 'text-primary' },
     { label: 'Total Queries', value: totalQueries, icon: MessageSquare, color: 'text-primary' },

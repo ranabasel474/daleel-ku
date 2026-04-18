@@ -7,6 +7,7 @@ interface Source {
   url: string;
 }
 
+//Props for a single chat bubble — includes the message, metadata, and optional action callbacks.
 interface ChatMessageProps {
   role: 'user' | 'bot';
   content: string;
@@ -15,6 +16,7 @@ interface ChatMessageProps {
   onRegenerate?: () => void;
 }
 
+//Renders a single chat bubble — user messages align right, bot messages align left.
 const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMessageProps) => {
   const isUser = role === 'user';
   const { t, isRTL } = useLanguage();
@@ -24,6 +26,7 @@ const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMe
     ? `${t.youSaid} ${content}`
     : `${t.botSays} ${content}`;
 
+  //Copies the message text to the clipboard and briefly shows a checkmark.
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
     setCopied(true);

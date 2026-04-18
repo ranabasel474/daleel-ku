@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { SquarePen, Settings, X, ChevronLeft, Eye, AudioLines, Languages } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+//Props for the ChatDrawer component, which manages the side menu state and actions.
 interface ChatDrawerProps {
   open: boolean;
   onClose: () => void;
   onNewChat: () => void;
 }
 
+//Renders the side drawer with chat actions and app settings.
 const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [highContrast, setHighContrast] = useState(() => {
@@ -17,10 +19,10 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
   const { lang, setLang, t, isRTL } = useLanguage();
   const firstFocusRef = useRef<HTMLButtonElement>(null);
 
+  //Locks page scroll while open and moves focus to the first action button.
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
-      // Move focus to first item when drawer opens
       setTimeout(() => firstFocusRef.current?.focus(), 100);
     } else {
       document.body.style.overflow = '';
@@ -29,7 +31,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  // Apply high-contrast mode via data-theme attribute + persist to localStorage
+  //Apply high-contrast mode via data-theme attribute + persist to localStorage
   useEffect(() => {
     if (highContrast) {
       document.documentElement.setAttribute('data-theme', 'high-contrast');
@@ -44,13 +46,14 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
     onClose();
   };
 
-  // Trap focus inside drawer when open
+  //Closes the drawer when the Escape key is pressed.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose();
     }
   };
 
+  //Reusable switch UI used by settings rows.
   const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => {
     const knobPosition = isRTL
       ? (checked ? 'left-0.5' : 'left-[calc(100%-1.375rem)]')
@@ -72,7 +75,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
     );
   };
 
-  // Drawer position: RTL = slides from right, LTR = slides from left
+  //Drawer slides from the right in RTL and from the left in LTR.
   const drawerPositionClass = isRTL
     ? `fixed top-0 right-0 h-full w-72 z-50 transition-transform duration-300 ease-in-out flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`
     : `fixed top-0 left-0 h-full w-72 z-50 transition-transform duration-300 ease-in-out flex flex-col ${open ? 'translate-x-0' : '-translate-x-full'}`;
@@ -181,7 +184,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
           )}
         </nav>
 
-        {/* Branding at bottom */}
+        {/* Bottom branding text */}
         <div className="p-4 border-t border-white/10 flex flex-col items-center gap-1" aria-hidden="true">
           <span style={{ fontFamily: "'Somar', sans-serif" }} className="text-white font-bold text-sm font-mono">
             DALEEL KU

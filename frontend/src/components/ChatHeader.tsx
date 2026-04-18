@@ -3,12 +3,14 @@ import AcademicBotLogo from './AcademicBotLogo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RefObject } from 'react';
 
+//Props used by ChatHeader, including the function that opens the side menu.
 interface ChatHeaderProps {
   onMenuOpen: () => void;
   hamburgerRef?: RefObject<HTMLButtonElement>;
   drawerOpen?: boolean;
 }
 
+//Renders the top app bar with the menu button and centered branding.
 const ChatHeader = ({ onMenuOpen, hamburgerRef, drawerOpen }: ChatHeaderProps) => {
   const { t, isRTL } = useLanguage();
 
@@ -30,6 +32,7 @@ const ChatHeader = ({ onMenuOpen, hamburgerRef, drawerOpen }: ChatHeaderProps) =
         <Menu size={20} aria-hidden="true" />
       </button>
 
+      {/* Centered logo and title — positioned absolutely so it stays centered. */}
       <div className="order-2 absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="flex items-center gap-2" dir="ltr">
           <div className="flex items-center justify-center">
@@ -43,6 +46,7 @@ const ChatHeader = ({ onMenuOpen, hamburgerRef, drawerOpen }: ChatHeaderProps) =
         </div>
       </div>
 
+      {/* Empty spacer keeps the layout balanced on the opposite side of the menu button. */}
       <div className={`w-10 h-10 ${isRTL ? 'order-1' : 'order-3'}`} aria-hidden="true" />
     </header>
   );

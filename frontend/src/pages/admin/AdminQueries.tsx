@@ -16,12 +16,13 @@ export interface QueryEntry {
   direction: 'rtl' | 'ltr';
 }
 
+//Sessions are grouped by date for easier browsing in the UI
 export interface Session {
   sessionDate: string;
   queryCount: number;
   entries: QueryEntry[];
 }
-
+//Static mock data simulating query sessions for demonstration purposes unless connected to a backend. 
 export const sessionsData: Session[] = [
   {
     sessionDate: '2026-03-20',
@@ -151,7 +152,7 @@ export const sessionsData: Session[] = [
   },
 ];
 
-// Flatten helper for dashboard/detail usage
+//Make one list of all queries from all sessions for easy reuse.
 export const allQueries: QueryEntry[] = sessionsData.flatMap((s) =>
   s.entries.map((e) => ({ ...e, sessionDate: s.sessionDate }))
 );
@@ -161,7 +162,8 @@ const statusConfig = {
   referral: { label: 'Referral', icon: XCircle, color: 'text-destructive' },
 };
 
-// Linkify URLs in text
+
+//Converts plain response text into a React node array with clickable URLs.
 const renderTextWithLinks = (text: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
@@ -182,6 +184,7 @@ const renderTextWithLinks = (text: string) => {
   );
 };
 
+//Renders query-log sessions with search/filter controls and CSV export.
 const AdminQueries = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -191,7 +194,7 @@ const AdminQueries = () => {
   const answeredCount = allQueries.filter((q) => q.status === 'answered').length;
   const referralCount = allQueries.filter((q) => q.status === 'referral').length;
 
-  // Filter sessions based on search and status
+  //Filter sessions based on search and status
   const filteredSessions = sessionsData
     .map((session) => {
       const filteredEntries = session.entries.filter((e) => {
@@ -199,10 +202,12 @@ const AdminQueries = () => {
         const matchesFilter = filter === 'all' || e.status === filter;
         return matchesSearch && matchesFilter;
       });
+      //Drop sessions with no visible entries so the UI only shows matching groups.
       return filteredEntries.length > 0 ? { ...session, entries: filteredEntries, queryCount: filteredEntries.length } : null;
     })
     .filter(Boolean) as Session[];
 
+  // Exports all query logs as a CSV file for spreadsheet tools.
   const exportCSV = () => {
     const headers = ['Session Date', 'Query #', 'Query Text', 'Response', 'Status', 'Time', 'Language'];
     const rows = sessionsData.flatMap((s) =>
@@ -217,12 +222,14 @@ const AdminQueries = () => {
       ])
     );
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    //Prefix with BOM so Arabic text opens correctly in Excel.
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `query-logs-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    //Release the temporary object URL 
     URL.revokeObjectURL(url);
   };
 
