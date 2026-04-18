@@ -20,6 +20,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+//Defines the shape of a knowledge-base document and some static options for form fields.
 interface Document {
   id: number;
   title: string;
@@ -30,18 +31,22 @@ interface Document {
   sourceUrl: string;
 }
 
+//Predefined options for select fields in the add/edit form.
 const colleges = [
   'All Colleges', 'Engineering', 'Science', 'Arts', 'Law', 'Medicine',
   'Education', 'Business Administration', 'Sharia & Islamic Studies',
 ];
 
+//Predefined topics for select fields in the add/edit form.
 const topics = [
   'Admissions', 'Registration', 'Exams', 'Scholarships',
   'Calendar', 'Regulations', 'Student Services', 'Graduation',
 ];
 
+//Predefined document types for the type select field in the add/edit form.
 const docTypes = ['PDF', 'HTML', 'DOCX', 'URL'];
 
+//Initial set of documents to populate the knowledge base before we connect the backend. Stored as an array of Document objects.
 const initialDocs: Document[] = [
   { id: 1, title: 'KU Official Website', type: 'URL', college: 'All Colleges', topic: 'Student Services', dateAdded: '2025-03-20', sourceUrl: 'https://www.ku.edu.kw/' },
   { id: 2, title: 'Vice Dean for Student Affairs for CLS', type: 'URL', college: 'CLS', topic: 'Student Services', dateAdded: '2025-03-18', sourceUrl: 'https://www.instagram.com/vdsa_cls/' },
@@ -49,8 +54,10 @@ const initialDocs: Document[] = [
   { id: 4, title: 'Student Handbook 2025/2026', type: 'PDF', college: 'All Colleges', topic: 'Regulations', dateAdded: '2025-03-12', sourceUrl: '' },
 ];
 
+//Defines an empty form state for resetting the add/edit dialog when opening it for a new document.
 const emptyForm = { title: '', type: 'PDF', college: 'All Colleges', topic: 'Admissions', sourceUrl: '' };
 
+//Renders the knowledge-base admin page and manages in-memory CRUD state for documents.
 const AdminKnowledge = () => {
   const [docs, setDocs] = useState<Document[]>(initialDocs);
   const [search, setSearch] = useState('');
@@ -65,6 +72,7 @@ const AdminKnowledge = () => {
     d.topic.toLowerCase().includes(search.toLowerCase())
   );
 
+  //Opens the add dialog with a clean form and no validation leftovers.
   const openAdd = () => {
     setEditId(null);
     setForm(emptyForm);
@@ -72,6 +80,7 @@ const AdminKnowledge = () => {
     setModalOpen(true);
   };
 
+  //Opens the edit dialog and preloads form fields from the selected document.
   const openEdit = (doc: Document) => {
     setEditId(doc.id);
     setForm({ title: doc.title, type: doc.type, college: doc.college, topic: doc.topic, sourceUrl: doc.sourceUrl });
@@ -79,6 +88,7 @@ const AdminKnowledge = () => {
     setModalOpen(true);
   };
 
+  // Validates current form values and returns true when the form is ready to save.
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!form.title.trim()) errors.title = 'Title is required';
@@ -86,17 +96,20 @@ const AdminKnowledge = () => {
     return Object.keys(errors).length === 0;
   };
 
+  //Persists form data into state by updating the current document or prepending a new one.
   const handleSave = () => {
     if (!validate()) return;
     if (editId !== null) {
       setDocs((prev) => prev.map((d) => d.id === editId ? { ...d, ...form, title: form.title.trim() } : d));
     } else {
       const newDoc: Document = {
+        //Date.now gives a simple unique-enough id for local/demo state.
         id: Date.now(),
         title: form.title.trim(),
         type: form.type,
         college: form.college,
         topic: form.topic,
+        //Store as YYYY-MM-DD so table formatting is consistent later.
         dateAdded: new Date().toISOString().split('T')[0],
         sourceUrl: form.sourceUrl,
       };
@@ -105,6 +118,7 @@ const AdminKnowledge = () => {
     setModalOpen(false);
   };
 
+  //Removes the selected document from state and clears the pending delete selection.
   const handleDelete = () => {
     if (deleteId !== null) {
       setDocs((prev) => prev.filter((d) => d.id !== deleteId));

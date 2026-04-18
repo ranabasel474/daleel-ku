@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 type Lang = 'ar' | 'en';
 
+//Translations for all UI text, keyed by language code. 
 const translations = {
   en: {
     headerSubtitle: 'Your Academic Guide at Kuwait University',
@@ -68,6 +69,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
+//Provides language, translations, and RTL flag to the whole app
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLang] = useState<Lang>('en');
   const t = translations[lang];
@@ -80,6 +82,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+//Hook to read the language context, must be used inside LanguageProvider
 export const useLanguage = () => {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error('useLanguage must be used within LanguageProvider');

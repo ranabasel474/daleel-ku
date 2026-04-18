@@ -7,9 +7,11 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
+//Resolves the vendor-prefixed SpeechRecognition API for cross-browser compatibility.
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
+//Renders the message input bar with text entry, character limit, and voice recording.
 const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -24,6 +26,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
   const transcriptRef = useRef("");
   const shouldRestartRef = useRef(false);
 
+  //Runs the animation and elapsed timer while recording; stops and resets them when done.
   useEffect(() => {
     if (isRecording) {
       setRecordingTime(0);
@@ -34,7 +37,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
       waveRef.current = setInterval(() => {
         setWaveHeights((prev) => {
           const next = [...prev];
-          // Shift left, add new bar on right
+          //Shift left, add new bar on right
           next.shift();
           next.push(0.1 + Math.random() * 0.9);
           return next;
@@ -52,15 +55,18 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     };
   }, [isRecording]);
 
+  //Formats seconds for the recording timer display.
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+  //Sends the trimmed message text and clears the input.
   const handleSend = () => {
     if (!text.trim() || disabled) return;
     onSend(text.trim());
     setText("");
   };
 
+  //Starts voice recognition and keeps it running until the user stops or cancels.
   const startRecording = useCallback(() => {
     if (!SpeechRecognition) {
       alert("Speech recognition is not supported in this browser.");
@@ -90,7 +96,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     };
 
     recognition.onerror = (event: any) => {
-      // Ignore no-speech errors — just let it restart
+      //Ignore no-speech errors — just let it restart
       if (event.error === "no-speech") return;
       shouldRestartRef.current = false;
       setIsRecording(false);
@@ -121,6 +127,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     setIsRecording(true);
   }, [lang]);
 
+  //Stops recording and discards anything captured so far.
   const cancelRecording = useCallback(() => {
     shouldRestartRef.current = false;
     recognitionRef.current?.stop();
@@ -128,6 +135,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
     setIsRecording(false);
   }, []);
 
+  //Stops recording and appends the captured transcript to the text input.
   const confirmRecording = useCallback(() => {
     shouldRestartRef.current = false;
     recognitionRef.current?.stop();

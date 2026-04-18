@@ -15,9 +15,11 @@ interface Message {
   sources?: { title: string; url: string }[];
 }
 
+//Renders the main chat page and coordinates session lifecycle plus message flow.
 const Index = () => {
   const { t, isRTL } = useLanguage();
 
+  //Builds the initial chat state with a welcome message.
   const getInitialMessages = (): Message[] => [
     {
       id: 1,
@@ -27,6 +29,7 @@ const Index = () => {
     },
   ];
 
+  //Manages chat messages, session ID for logging, typing state, drawer visibility and scroll button visibility.
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -34,14 +37,14 @@ const Index = () => {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
-  // Ref keeps the beforeunload handler in sync with the latest sessionId
-  // without needing to re-register the listener on every state change.
   const sessionIdRef = useRef<string | null>(null);
 
+  //Smoothly scrolls the chat container to its latest message.
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, []);
 
+  //Creates a new backend session and stores its id for later query logging.
   const startSession = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:5000/api/session', {
@@ -61,15 +64,12 @@ const Index = () => {
     startSession();
   }, [startSession]);
 
-  // Mirror sessionId into a ref so the beforeunload handler always reads
-  // the current value without needing to be re-registered on each change.
+  //Keep the newest session ID in this ref so endSession can use it.
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
 
-  // Close the session when the user navigates away or closes the tab (beforeunload),
-  // and also on React component unmount (effect cleanup).
-  // sendBeacon is used for the unload case because fetch is unreliable at that point.
+  //Ensures the session is closed on page unload to allow proper logging of session duration and queries.
   useEffect(() => {
     const endSession = () => {
       const id = sessionIdRef.current;
@@ -106,8 +106,9 @@ const Index = () => {
     return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
+  //Starts a fresh chat by ending the current session and resetting local messages.
   const handleNewChat = async () => {
-    // Close the current session before resetting the UI.
+    //Close the current session before resetting the UI.
     if (sessionId) {
       try {
         await fetch(`http://localhost:5000/api/session/${sessionId}`, {
@@ -115,13 +116,14 @@ const Index = () => {
           headers: { 'Content-Type': 'application/json' },
         });
       } catch {
-        // A session-close failure should not block the user from starting fresh.
+        //A session-close failure should not block the user from starting fresh.
       }
     }
     setMessages(getInitialMessages());
     startSession();
   };
 
+  //Re-sends the latest matching user question and replaces one bot reply with a new one.
   const handleRegenerate = async (botMsgIndex: number) => {
     const userMsg = messages.slice(0, botMsgIndex).reverse().find(m => m.role === 'user');
     if (!userMsg || isTyping) return;
@@ -133,7 +135,7 @@ const Index = () => {
     const h12 = hours % 12 || 12;
     const ts = `${h12}:${minutes} ${period}`;
 
-    // Remove the old bot message
+    //Remove the old chatbot message
     setMessages(prev => prev.filter((_, i) => i !== botMsgIndex));
     setIsTyping(true);
 
@@ -152,12 +154,14 @@ const Index = () => {
     }
   };
 
+  //Close the drawer, then move focus back to the menu button.
   const handleDrawerClose = () => {
     setDrawerOpen(false);
-    // Return focus to hamburger when drawer closes
+
     setTimeout(() => hamburgerRef.current?.focus(), 100);
   };
 
+  //Sends a user message, requests a bot response and appends both to chat history.
   const handleSend = async (text: string) => {
     const now = new Date();
     const hours = now.getHours();

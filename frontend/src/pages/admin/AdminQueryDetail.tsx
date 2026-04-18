@@ -11,7 +11,7 @@ const statusConfig = {
   referral: { label: 'Referral', icon: XCircle, color: 'text-destructive', badge: 'destructive' as const },
 };
 
-// Linkify URLs
+//Converts plain response text into React nodes with clickable links.
 const renderTextWithLinks = (text: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
@@ -26,15 +26,17 @@ const renderTextWithLinks = (text: string) => {
   );
 };
 
+//Renders one query log entry with its metadata and related entries from the same session.
 const AdminQueryDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Find entry and its session
+  //Find entry and its session
   let query: QueryEntry | undefined;
   let sessionDate = '';
   let sessionEntries: QueryEntry[] = [];
 
+  //Go through sessions once to get the query and its session info.
   for (const session of sessionsData) {
     const found = session.entries.find((e) => e.id === Number(id));
     if (found) {
@@ -59,6 +61,7 @@ const AdminQueryDetail = () => {
 
   const sc = statusConfig[query.status];
   const StatusIcon = sc.icon;
+  //Remove the current query so this list shows only other queries.
   const otherEntries = sessionEntries.filter((e) => e.id !== query!.id);
 
   return (

@@ -18,17 +18,19 @@ const navItems = [
   { title: 'Query Logs', path: '/admin/queries', icon: MessageSquare },
 ];
 
+//Props for AdminLayout
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+//Persistent layout for all admin pages
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close profile menu on outside click
+  //Close profile menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {

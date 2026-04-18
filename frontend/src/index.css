@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
 
+/* Local brand font used in some UI elements */
 @font-face {
   font-family: 'Somar';
   src: url('/fonts/Somar-Regular.otf') format('opentype'),
@@ -14,6 +15,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light theme design tokens */
   :root {
     --background: 40 20% 98%;
     --foreground: 0 0% 10%;
@@ -62,6 +64,7 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* Dark theme design tokens */
   .dark {
     --background: 220 20% 7%;
     --foreground: 210 20% 90%;
@@ -210,10 +213,12 @@
   }
 }
 
+/* Typing indicator dot animation timing */
 .dot-bounce-1 { animation: bounce-dot 1.4s ease-in-out infinite; }
 .dot-bounce-2 { animation: bounce-dot 1.4s ease-in-out 0.2s infinite; }
 .dot-bounce-3 { animation: bounce-dot 1.4s ease-in-out 0.4s infinite; }
 
+/* Full-screen centered layout for the landing page */
 .landing-container {
   min-height: 100vh;
   display: flex;
