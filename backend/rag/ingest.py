@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import time
 from llama_parse import LlamaParse
 from llama_index.core import VectorStoreIndex, Settings, Document
 from llama_index.core.node_parser import SentenceSplitter
@@ -21,9 +20,10 @@ _SPLITTER = SentenceSplitter(chunk_size=768, chunk_overlap=200)
 _ARABIC_NOISE = re.compile(r"[\u0640\u064b-\u065f\u0610-\u061a]")
 _SUBSCRIPT_DIGITS = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
 
+#Change subscript numbers to normal digits (Parsing limitation)
 def _normalize_text(text: str) -> str:
-    #Change subscript numbers to normal digits
     return text.translate(_SUBSCRIPT_DIGITS)
+
 
 _PARSER = LlamaParse(
     api_key=os.getenv("LLAMA_CLOUD_API_KEY"),
@@ -32,20 +32,21 @@ _PARSER = LlamaParse(
     verbose=True
 )
 
+# Remove kashida and diacritics from Arabic text
+
 def _clean_arabic(text: str) -> str:
-    """Remove kashida and diacritics from Arabic text."""
     return _ARABIC_NOISE.sub("", text)
 
+#Return all PDF paths from the data directory
 def _get_pdf_paths() -> list[str]:
-    #Return all PDF paths from the data directory
     return [
         os.path.join(DATA_DIR, f)
         for f in os.listdir(DATA_DIR)
         if f.lower().endswith(".pdf")
     ]
 
+#Cache is valid only when it exists and no PDF is newer than it
 def _cache_is_valid() -> bool:
-    #Cache is valid only when it exists and no PDF is newer than it
     if not os.path.isfile(CACHE_FILE):
         return False
     cache_mtime = os.path.getmtime(CACHE_FILE)
@@ -54,24 +55,22 @@ def _cache_is_valid() -> bool:
             return False
     return True
 
+ #Load previously parsed PDF content from cache
 def _load_cache() -> list[Document]:
-    #Load previously parsed PDF content from cache
     with open(CACHE_FILE, "r", encoding="utf-8") as f:
         entries = json.load(f)
     return [Document(text=e["text"], metadata=e["metadata"]) for e in entries]
 
-
+#Save parsed PDF content so we can skip re-parsing next time
 def _save_cache(docs: list[Document]) -> None:
-    #Save parsed PDF content so we can skip re-parsing next time
     os.makedirs(CACHE_DIR, exist_ok=True)
     entries = [{"text": doc.text, "metadata": doc.metadata} for doc in docs]
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     print("[ingest] Cache saved successfully")
 
-
+# Parse one PDF with LlamaParse and attach the file name to metadata
 def _load_pdf(path: str) -> list[Document]:
-    """Parse one PDF with LlamaParse and attach the file name to metadata."""
     file_name = os.path.basename(path)
     docs = _PARSER.load_data(path)
     return [
@@ -86,7 +85,7 @@ def _load_all_pdfs() -> list[Document]:
         docs.extend(_load_pdf(pdf_path))
     return docs
 
-#Build an index from PDFs and text files in the data/ directory
+#Build an index from data files in the data/ directory
 def build_index():
     if not os.path.isdir(DATA_DIR):
         raise ValueError(f"Data directory not found: {DATA_DIR}")
@@ -114,6 +113,7 @@ def build_index():
                     metadata={"file_name": file_name},
                 ))
 
+    # Raise an error if  documents don't exist          
     if not documents:
         raise ValueError("No documents found in the data/ directory.")
     nodes = _SPLITTER.get_nodes_from_documents(documents)
@@ -122,5 +122,6 @@ def build_index():
     for node in nodes:
         node.set_content(_clean_arabic(node.get_content()))
 
+    # Log some stats about the built index (for Test only)    
     print(f"[ingest] Index built — {len(nodes)} chunks ready")
     return VectorStoreIndex(nodes)

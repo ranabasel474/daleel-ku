@@ -12,27 +12,27 @@ _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 
 index = build_index()
 
-chat_bp = Blueprint("chat", __name__)
+chat_bp = Blueprint("chat", __name__)  # Chat API routes
 
 MAX_QUERY_LENGTH = 1000
 
-#Validates the student query before processing
+# Validates the student query before processing
 def validate_query(text):
-    #Reject empty input
+    # Reject empty input
     if not text or not text.strip():
         return False, "Query can't be empty."
     
-    #Reject input that is too long
+    # Reject long input quries 
     if len(text) > MAX_QUERY_LENGTH:
         return False, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
     
     return True, None
 
 
-#Classifies the query as 'gpa' or 'general' using GPT-4o
+# Classifies the query as 'gpa' or 'general'
 def detect_query_type(text):
     classification_prompt = (
-        "You are a query classifier for a Kuwait University academic chatbot. "
+        "You are a query classifier for a Kuwait University academic chatbot"
         "Classify the following student query into exactly one of two categories:\n"
         "- gpa       : the student is asking to calculate or estimate their GPA\n"
         "- general   : the student is asking any other academic question\n\n"
@@ -55,31 +55,37 @@ def detect_query_type(text):
         return "general"
 
 
-#Handles student questions, logs them, and returns a response
-@chat_bp.route("/query", methods=["POST"])
-@limiter.limit("30 per minute")
+@chat_bp.route("/query", methods=["POST"])  # Query endpoint 
+@limiter.limit("30 per minute")  # Per-IP rate limit
+
+# Main query handler 
 def query():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
     session_id = data.get("session_id") if data else None
-
+    
+    # 1) validate query
     is_valid, error_message = validate_query(query_text)
     if not is_valid:
         return jsonify({"error": error_message}), 400
-
+    
+    # 2) Classify query type
     query_type = detect_query_type(query_text)
 
+    # 3) Process query based on its type
     if query_type == "gpa":
         result = handle_gpa_query(query_text)
     else:
         search_result = search_query(index, query_text)
         result = generate_response(search_result, query_text)
 
+    # 4) Log the query and response to Supabase    
     response_text = result["answer"]
     was_answered = result["was_answered"]
     source_url = result.get("source_url")
     source_name = result.get("source_name")
 
+    #Logging failure must not block the student from receiving their response
     try:
         log_entry = {
             "query_text": query_text,
@@ -93,9 +99,9 @@ def query():
         supabase_admin.table("user_query").insert(log_entry).execute()
 
     except Exception as e:
-        #Logging failure must not block the student from receiving their response
         print(f"Warning: failed to log query to Supabase — {e}")
 
+    # 5) Return the response to the student
     return jsonify({
         "response": response_text,
         "was_answered": was_answered,
@@ -120,7 +126,7 @@ def create_session():
         return jsonify({"error": "Could not create a new session."}), 500
 
 
-#Ends a session by setting ended_at
+# 6) Ends a session by setting ended_at
 @chat_bp.route("/session/<session_id>", methods=["PATCH"])
 def end_session(session_id):
     try:
@@ -129,7 +135,8 @@ def end_session(session_id):
         }).eq("session_id", session_id).execute()
 
         return jsonify({"session_id": session_id}), 200
-
+    
+    # Raise an error when session_id is invalid or database update fails
     except Exception as e:
         print(f"Error ending session {session_id}: {e}")
         return jsonify({"error": "Could not end the session."}), 500

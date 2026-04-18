@@ -85,8 +85,8 @@ def generate_response(search_result: dict, query: str) -> dict:
     source_url = search_result.get("source_url")
     source_name = search_result.get("source_name")
 
+    #No context => return fallback text
     if not context or not context.strip():
-        #No context means we must return fallback text
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
         return {"answer": fallback_text, "was_answered": False, "source_url": None, "source_name": None}
 

@@ -1,1 +1,1 @@
-#Social media ingestion will be implemented once Apify integration is ready.
+# Social media ingestion will be implemented once Apify integration is ready
