@@ -258,7 +258,7 @@ Returns all logged student queries, ordered newest first.
 - **JWT auth**: all admin routes require a valid Supabase-issued JWT (verified via Supabase Auth)
 - **Input validation**: query length capped at 1000 chars; system prompt and user input are always kept structurally separate in the OpenAI API call
 - **CORS**: restricted to `FRONTEND_URL`
-- **No PII**: GPA inputs are session-only and never persisted
+- **No Personal Information stored**: GPA inputs are session-only and never persisted
 
 ---
 
