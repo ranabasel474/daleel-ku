@@ -196,7 +196,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
           </div>
         ) : (
           <>
-            <div className="relative flex items-end">
+            <div className="relative flex items-center">
               <textarea
                 dir="auto"
                 rows={1}
@@ -224,7 +224,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
               />
 
               <div
-                className={`absolute flex items-center gap-1 ${isRTL ? "left-2" : "right-2"}`}
+                className={`absolute inset-y-0 flex items-center gap-1 ${isRTL ? "left-2" : "right-2"}`}
               >
                 <button
                   onClick={startRecording}
