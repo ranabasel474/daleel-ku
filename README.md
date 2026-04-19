@@ -48,11 +48,11 @@ daleel-ku/
 
 - Python 3.10+
 - Node.js
-- A Supabase project with pgvector enabled
-- An OpenAI API key
-- A Llama Cloud API key (for LlamaParse PDF extraction)
-- A Firecrawl API key (for web crawling)
-- An Apify API key (for social media scraping)
+- Supabase project with pgvector enabled
+- OpenAI API key
+- Llama Cloud API key (for LlamaParse PDF extraction)
+- Firecrawl API key (for web crawling)
+- Apify API key (for social media scraping)
 
 ### Backend
 
@@ -268,9 +268,3 @@ Returns all logged student queries, ordered newest first.
 - **CLS-specific**: detailed academic guidance for College of Life Sciences students
 
 Content is ingested from PDFs (via LlamaParse), web pages (via Firecrawl), and social media (via Apify + GPT-4o Vision for OCR).
-
----
-
-## Known Limitations
-
-- Arabic RTL tables: column ordering can be swapped in some cases when parsing PDFs.
