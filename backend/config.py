@@ -4,6 +4,7 @@ from supabase import create_client
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
+from llama_index.vector_stores.postgres import PGVectorStore
 
 load_dotenv()
 
@@ -64,3 +65,23 @@ if not LLAMA_CLOUD_API_KEY:
 # APIFY_API_KEY = os.getenv("APIFY_API_KEY")
 # if not APIFY_API_KEY:
 #     raise ValueError("APIFY_API_KEY environment variable is not set")
+
+# Postgres connection for pgvector (direct connection, not pooler)
+SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
+if not SUPABASE_DB_URL:
+    raise ValueError("SUPABASE_DB_URL environment variable is not set")
+
+_sync_conn = SUPABASE_DB_URL
+if _sync_conn.startswith("postgresql://"):
+    _sync_conn = _sync_conn.replace("postgresql://", "postgresql+psycopg2://", 1)
+_async_conn = _sync_conn.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+
+vector_store = PGVectorStore(
+    connection_string=_sync_conn,
+    async_connection_string=_async_conn,
+    table_name="chunks",   # actual table: data_chunks
+    schema_name="public",
+    embed_dim=1536,
+    use_jsonb=True,
+    perform_setup=True,
+)

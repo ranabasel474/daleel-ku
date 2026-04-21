@@ -2,9 +2,10 @@ import os
 import re
 import json
 from llama_parse import LlamaParse
-from llama_index.core import VectorStoreIndex, Settings, Document
+from llama_index.core import VectorStoreIndex, StorageContext, Settings, Document
 from llama_index.core.node_parser import SentenceSplitter
-from config import llm, embed_model, LLAMA_CLOUD_API_KEY
+from llama_index.core.llms import ChatMessage
+from config import llm, embed_model, LLAMA_CLOUD_API_KEY, vector_store, supabase_admin
 
 Settings.llm = llm
 Settings.embed_model = embed_model
@@ -21,9 +22,10 @@ _ARABIC_NOISE = re.compile(r"[\u0640\u064b-\u065f\u0610-\u061a]")
 _SUBSCRIPT_DIGITS = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
 
 #Change subscript numbers to normal digits (Parsing limitation)
+_UUID_METADATA_KEYS = ["college_id", "topic_id", "source_id", "document_id"]
+
 def _normalize_text(text: str) -> str:
     return text.translate(_SUBSCRIPT_DIGITS)
-
 
 _PARSER = LlamaParse(
     api_key=os.getenv("LLAMA_CLOUD_API_KEY"),
@@ -85,43 +87,102 @@ def _load_all_pdfs() -> list[Document]:
         docs.extend(_load_pdf(pdf_path))
     return docs
 
-#Build an index from data files in the data/ directory
-def build_index():
-    if not os.path.isdir(DATA_DIR):
-        raise ValueError(f"Data directory not found: {DATA_DIR}")
+# --- College / Topic classification ---
 
-    documents = []
+def _fetch_colleges() -> list[dict]:
+    response = supabase_admin.table("college").select("college_id, college_name").execute()
+    return response.data or []
 
-    #Load PDFs from cache when possible, otherwise parse and cache them
-    if _cache_is_valid():
-        print("[ingest] Loading from cache...")
-        documents.extend(_load_cache())
+def _fetch_topics() -> list[dict]:
+    response = supabase_admin.table("topic").select("topic_id, topic_name").execute()
+    return response.data or []
+
+def _classify_document(full_text: str, colleges: list[dict], topics: list[dict]) -> dict:
+    college_list = "\n".join(
+        f"- {c['college_id']}: {c['college_name']}" for c in colleges
+    )
+    snippet = full_text[:3000]
+
+    if topics:
+        topic_list = "\n".join(
+            f"- {t['topic_id']}: {t['topic_name']}" for t in topics
+        )
+        topic_instruction = (
+            f"## Topics:\n{topic_list}\n\n"
+            'Reply with JSON only:\n{"college_id": <integer>, "topic_id": "<uuid>"}'
+        )
     else:
-        print("[ingest] Cache miss — calling LlamaParse...")
-        pdf_docs = _load_all_pdfs()
-        if pdf_docs:
-            _save_cache(pdf_docs)
-        documents.extend(pdf_docs)
-
-    #Load plain text files directly
-    for file_name in os.listdir(DATA_DIR):
-        if file_name.lower().endswith(".txt"):
-            file_path = os.path.join(DATA_DIR, file_name)
-            with open(file_path, "r", encoding="utf-8") as f:
-                documents.append(Document(
-                    text=f.read(),
-                    metadata={"file_name": file_name},
-                ))
-
-    # Raise an error if  documents don't exist          
-    if not documents:
-        raise ValueError("No documents found in the data/ directory.")
-    nodes = _SPLITTER.get_nodes_from_documents(documents)
-
     #Clean Arabic noise after splitting so chunking is not affected
+        topic_instruction = (
+            "No topics are defined yet.\n"
+            'Reply with JSON only:\n{"college_id": <integer>, "topic_id": null}'
+        )
+
+    prompt = (
+        "You are a document classifier for Kuwait University.\n"
+        "Based on the following document excerpt, classify it into exactly one college"
+        + (" and one topic.\n\n" if topics else ".\n\n") +
+        f"## Colleges (use the integer college_id):\n{college_list}\n\n"
+        f"{topic_instruction}\n\n"
+        f"## Document excerpt:\n{snippet}"
+    )
+
+    try:
+        response = llm.chat([
+            ChatMessage(role="system", content="You are a classification assistant. Reply with valid JSON only, no markdown."),
+            ChatMessage(role="user", content=prompt),
+        ])
+        result = json.loads(response.message.content.strip())
+        return {
+            "college_id": int(result["college_id"]) if result.get("college_id") is not None else None,
+            "topic_id": result.get("topic_id"),
+        }
+    except Exception as e:
+        print(f"[ingest] Warning: classification failed — {e}")
+        return {"college_id": None, "topic_id": None}
+
+# --- Public API ---
+
+def build_index() -> VectorStoreIndex:
+    """Load the pgvector-backed index for querying. No re-ingestion."""
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
+    print("[ingest] Index loaded from PGVectorStore")
+    return index
+
+
+def ingest_document(document_id: str, source_id: str, pdf_path: str) -> int:
+    """Parse, classify, chunk, and persist a single PDF to pgvector. Returns chunk count."""
+    # 1. Parse
+    docs = _load_pdf(pdf_path)
+    if not docs:
+        raise ValueError(f"No content parsed from {pdf_path}")
+
+    # 2. Classify
+    full_text = "\n".join(doc.text for doc in docs)
+    colleges = _fetch_colleges()
+    topics = _fetch_topics()
+    classification = _classify_document(full_text, colleges, topics)
+    college_id = classification["college_id"]
+    topic_id = classification["topic_id"]
+    file_name = os.path.basename(pdf_path)
+    print(f"[ingest] Classified '{file_name}': college_id={college_id}, topic_id={topic_id}")
+
+    # 3. Chunk and clean
+    nodes = _SPLITTER.get_nodes_from_documents(docs)
     for node in nodes:
         node.set_content(_clean_arabic(node.get_content()))
+        node.metadata["college_id"] = college_id
+        node.metadata["topic_id"] = topic_id
+        node.metadata["source_id"] = source_id
+        node.metadata["document_id"] = document_id
+        node.metadata["file_name"] = file_name
+        # Keep UUID fields out of the LLM prompt to reduce noise
+        node.excluded_llm_metadata_keys = _UUID_METADATA_KEYS
 
-    # Log some stats about the built index (for Test only)    
-    print(f"[ingest] Index built — {len(nodes)} chunks ready")
-    return VectorStoreIndex(nodes)
+    # 4. Persist to pgvector
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    VectorStoreIndex(nodes, storage_context=storage_context)
+
+    print(f"[ingest] Ingested {len(nodes)} chunks for '{file_name}'")
+    return len(nodes)

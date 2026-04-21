@@ -1,7 +1,9 @@
 import re
 from llama_index.core import VectorStoreIndex
+from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterCondition
 
 TOP_K = 5  #number of chunks passed to the LLM
+TOP_K = 5
 
 # Arabic normalization pattern.
 _ARABIC_NOISE = re.compile(r"[\u0640\u064b-\u065f\u0610-\u061a]")
@@ -20,10 +22,23 @@ def _label_nodes(nodes) -> str:
     return "\n\n---\n\n".join(labeled)
 
 # Retrieve context for a question
-def search_query(index: VectorStoreIndex, question: str) -> dict:
+def search_query(
+    index: VectorStoreIndex,
+    question: str,
+    college_id: int | None = None,
+    topic_id: str | None = None,
+) -> dict:
     clean_question = _clean_arabic(question)
 
-    retriever = index.as_retriever(similarity_top_k=TOP_K)
+    filter_list = []
+    if college_id is not None:
+        filter_list.append(MetadataFilter(key="college_id", value=college_id))
+    if topic_id is not None:
+        filter_list.append(MetadataFilter(key="topic_id", value=topic_id))
+
+    filters = MetadataFilters(filters=filter_list, condition=FilterCondition.AND) if filter_list else None
+
+    retriever = index.as_retriever(similarity_top_k=TOP_K, filters=filters)
     raw_nodes = retriever.retrieve(clean_question)
 
     # Deduplicate nodes by id
@@ -37,8 +52,7 @@ def search_query(index: VectorStoreIndex, question: str) -> dict:
 
     print(f"[retrieval] query: {repr(question[:80])}")
     print(f"[retrieval] hits: {len(nodes)}")
-    
-    # Log node metadata (score, page)
+
     for i, n in enumerate(nodes, 1):
         meta = n.metadata or {}
         page = meta.get("page_label") or meta.get("page") or meta.get("source") or "?"
