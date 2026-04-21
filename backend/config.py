@@ -72,7 +72,9 @@ if not SUPABASE_DB_URL:
     raise ValueError("SUPABASE_DB_URL environment variable is not set")
 
 _sync_conn = SUPABASE_DB_URL
-if _sync_conn.startswith("postgresql://"):
+if _sync_conn.startswith("postgres://"):
+    _sync_conn = _sync_conn.replace("postgres://", "postgresql+psycopg2://", 1)
+elif _sync_conn.startswith("postgresql://"):
     _sync_conn = _sync_conn.replace("postgresql://", "postgresql+psycopg2://", 1)
 _async_conn = _sync_conn.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
