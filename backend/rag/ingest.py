@@ -102,44 +102,52 @@ def _classify_document(full_text: str, colleges: list[dict], topics: list[dict])
         f"- {c['college_id']}: {c['college_name']}" for c in colleges
     )
     snippet = full_text[:3000]
-
-    if topics:
-        topic_list = "\n".join(
-            f"- {t['topic_id']}: {t['topic_name']}" for t in topics
-        )
-        topic_instruction = (
-            f"## Topics:\n{topic_list}\n\n"
-            'Reply with JSON only:\n{"college_id": <integer>, "topic_id": "<uuid>"}'
-        )
-    else:
-    #Clean Arabic noise after splitting so chunking is not affected
-        topic_instruction = (
-            "No topics are defined yet.\n"
-            'Reply with JSON only:\n{"college_id": <integer>, "topic_id": null}'
-        )
-
     prompt = (
         "You are a document classifier for Kuwait University.\n"
-        "Based on the following document excerpt, classify it into exactly one college"
-        + (" and one topic.\n\n" if topics else ".\n\n") +
+        "Based on the following document excerpt, classify it into exactly one college "
+        "and suggest one short topic name in Arabic (max 5 words).\n\n"
         f"## Colleges (use the integer college_id):\n{college_list}\n\n"
-        f"{topic_instruction}\n\n"
+        "Reply with JSON only, no extra text, no markdown, no code fences.\n"
+        "Use this exact schema:\n"
+        '{"college_id": <integer>, "topic_name": "<arabic topic up to 5 words>"}\n\n'
         f"## Document excerpt:\n{snippet}"
     )
 
     try:
         response = llm.chat([
-            ChatMessage(role="system", content="You are a classification assistant. Reply with valid JSON only, no markdown."),
+            ChatMessage(role="system", content="You are a classification assistant. Return valid JSON only with keys college_id and topic_name. No extra text."),
             ChatMessage(role="user", content=prompt),
-        ])
-        result = json.loads(response.message.content.strip())
+        ], temperature=0)
+        raw_content = (response.message.content or "").strip()
+        print(f"[ingest] Raw classification response: {raw_content}")
+
+        result = json.loads(raw_content)
+        college_id = result.get("college_id")
+        try:
+            college_id = int(college_id)
+        except (TypeError, ValueError):
+            college_id = 0
+
+        topic_name = str(result.get("topic_name") or "").strip()
+        if topic_name:
+            topic_name = " ".join(topic_name.split()[:5])
+
+        topic_id = None
+        if topic_name:
+            result = supabase_admin.table("topic").select("topic_id").eq("topic_name", topic_name).execute()
+            if result.data:
+                topic_id = result.data[0]["topic_id"]
+            else:
+                insert_result = supabase_admin.table("topic").insert({"topic_name": topic_name}).execute()
+                topic_id = insert_result.data[0]["topic_id"]
+
         return {
-            "college_id": int(result["college_id"]) if result.get("college_id") is not None else None,
-            "topic_id": result.get("topic_id"),
+            "college_id": college_id,
+            "topic_id": topic_id,
         }
     except Exception as e:
         print(f"[ingest] Warning: classification failed — {e}")
-        return {"college_id": None, "topic_id": None}
+        return {"college_id": 0, "topic_id": None}
 
 # --- Public API ---
 
