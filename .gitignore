@@ -215,3 +215,9 @@ dist/
 
 # macOS
 .DS_Store
+output.txt
+
+
+# Claude AI
+.claude/
+.claudeignore
