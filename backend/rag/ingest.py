@@ -159,7 +159,7 @@ def build_index() -> VectorStoreIndex:
     return index
 
 
-def ingest_document(document_id: str, source_id: str, pdf_path: str) -> int:
+def ingest_document(document_id: str, source_id: str, pdf_path: str, original_filename: str = None) -> int:
     """Parse, classify, chunk, and persist a single PDF to pgvector. Returns chunk count."""
     # 1. Parse
     docs = _load_pdf(pdf_path)
@@ -173,7 +173,7 @@ def ingest_document(document_id: str, source_id: str, pdf_path: str) -> int:
     classification = _classify_document(full_text, colleges, topics)
     college_id = classification["college_id"]
     topic_id = classification["topic_id"]
-    file_name = os.path.basename(pdf_path)
+    file_name = original_filename or os.path.basename(pdf_path)
     print(f"[ingest] Classified '{file_name}': college_id={college_id}, topic_id={topic_id}")
 
     # 3. Chunk and clean
@@ -183,10 +183,12 @@ def ingest_document(document_id: str, source_id: str, pdf_path: str) -> int:
         node.metadata["college_id"] = college_id
         node.metadata["topic_id"] = topic_id
         node.metadata["source_id"] = source_id
+        # Store as db_document_id so LlamaIndex's own document_id doesn't overwrite it
+        node.metadata["db_document_id"] = document_id
         node.metadata["document_id"] = document_id
         node.metadata["file_name"] = file_name
         # Keep UUID fields out of the LLM prompt to reduce noise
-        node.excluded_llm_metadata_keys = _UUID_METADATA_KEYS
+        node.excluded_llm_metadata_keys = _UUID_METADATA_KEYS + ["db_document_id"]
 
     # 4. Persist to pgvector
     storage_context = StorageContext.from_defaults(vector_store=vector_store)

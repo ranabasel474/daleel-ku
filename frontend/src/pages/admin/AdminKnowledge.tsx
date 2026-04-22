@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Plus, Search, Pencil, Trash2, Upload, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from '@/hooks/useDocuments';
+import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument, useUploadDocument } from '@/hooks/useDocuments';
 
 //Predefined options for select fields in the add/edit form.
 const colleges = [
@@ -47,7 +47,9 @@ const AdminKnowledge = () => {
   const createDoc = useCreateDocument();
   const updateDoc = useUpdateDocument();
   const deleteDoc = useDeleteDocument();
+  const uploadDoc = useUploadDocument();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,8 +57,9 @@ const AdminKnowledge = () => {
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const isSaving = createDoc.isPending || updateDoc.isPending;
+  const isSaving = createDoc.isPending || updateDoc.isPending || uploadDoc.isPending;
 
   const filtered = docs.filter((d) =>
     d.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,6 +71,8 @@ const AdminKnowledge = () => {
     setEditId(null);
     setForm(emptyForm);
     setFormErrors({});
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setModalOpen(true);
   };
 
@@ -87,28 +92,43 @@ const AdminKnowledge = () => {
     return Object.keys(errors).length === 0;
   };
 
-  //Persists form data via the API.
+  //Persists form data via the API. Uses upload endpoint when a PDF file is attached.
   const handleSave = () => {
     if (!validate()) return;
 
-    const payload = {
-      title: form.title.trim(),
-      source_url: form.sourceUrl,
-      document_type: form.type,
-    };
+    const onError = (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' });
 
     if (editId !== null) {
+      const payload = {
+        title: form.title.trim(),
+        source_url: form.sourceUrl,
+        document_type: form.type,
+      };
       updateDoc.mutate(
         { id: editId, data: payload },
+        { onSuccess: () => setModalOpen(false), onError },
+      );
+    } else if (selectedFile) {
+      uploadDoc.mutate(
+        { file: selectedFile, title: form.title.trim() },
         {
-          onSuccess: () => setModalOpen(false),
-          onError: (err) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+          onSuccess: (data) => {
+            setModalOpen(false);
+            setSelectedFile(null);
+            toast({ title: 'Uploaded', description: `PDF ingested — ${data.chunks_created} chunks created.` });
+          },
+          onError,
         },
       );
     } else {
+      const payload = {
+        title: form.title.trim(),
+        source_url: form.sourceUrl,
+        document_type: form.type,
+      };
       createDoc.mutate(payload, {
         onSuccess: () => setModalOpen(false),
-        onError: (err) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+        onError,
       });
     }
   };
@@ -270,9 +290,25 @@ const AdminKnowledge = () => {
               />
             </div>
 
-            <div className="flex items-center gap-3 p-3 border border-dashed border-border rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setSelectedFile(file);
+                if (file) setForm((f) => ({ ...f, type: 'PDF', title: f.title || file.name.replace(/\.pdf$/i, '') }));
+              }}
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-3 p-3 border border-dashed border-border rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+            >
               <Upload size={18} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Upload PDF</span>
+              <span className="text-sm text-muted-foreground">
+                {selectedFile ? selectedFile.name : 'Upload PDF'}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

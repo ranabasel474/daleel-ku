@@ -31,6 +31,30 @@ export function useUpdateDocument() {
   });
 }
 
+export function useUploadDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ file, title }: { file: File; title: string }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', title);
+
+      const token = localStorage.getItem('access_token');
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const res = await fetch(`${baseUrl}/api/admin/documents/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Upload failed');
+      return body as { document: ApiDocument; chunks_created: number };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),
+  });
+}
+
 export function useDeleteDocument() {
   const qc = useQueryClient();
   return useMutation({
