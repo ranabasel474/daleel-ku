@@ -47,7 +47,7 @@ const Index = () => {
   //Creates a new backend session and stores its id for later query logging.
   const startSession = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/session', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -74,7 +74,7 @@ const Index = () => {
     const endSession = () => {
       const id = sessionIdRef.current;
       if (!id) return;
-      navigator.sendBeacon(`http://localhost:5000/api/session/${id}`);
+      navigator.sendBeacon(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session/${id}`);
     };
 
     window.addEventListener('beforeunload', endSession);
@@ -111,7 +111,7 @@ const Index = () => {
     //Close the current session before resetting the UI.
     if (sessionId) {
       try {
-        await fetch(`http://localhost:5000/api/session/${sessionId}`, {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session/${sessionId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -140,7 +140,7 @@ const Index = () => {
     setIsTyping(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/query', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg.content, session_id: sessionId }),
@@ -181,7 +181,7 @@ const Index = () => {
     setIsTyping(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/query', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, session_id: sessionId }),

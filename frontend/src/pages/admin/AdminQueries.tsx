@@ -5,157 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAdminQueries } from '@/hooks/useQueries';
+import type { QueryEntry, Session } from '@/lib/types';
 
-export interface QueryEntry {
-  id: number;
-  queryText: string;
-  status: 'answered' | 'referral';
-  time: string;
-  response: string;
-  language: 'ar' | 'en';
-  direction: 'rtl' | 'ltr';
-}
-
-//Sessions are grouped by date for easier browsing in the UI
-export interface Session {
-  sessionDate: string;
-  queryCount: number;
-  entries: QueryEntry[];
-}
-//Static mock data simulating query sessions for demonstration purposes unless connected to a backend. 
-export const sessionsData: Session[] = [
-  {
-    sessionDate: '2026-03-20',
-    queryCount: 3,
-    entries: [
-      {
-        id: 1,
-        queryText: 'متى يتم التقديم لجامعة الكويت؟',
-        status: 'answered',
-        time: '09:10 AM',
-        response: 'يتم تقديم طلب الالتحاق إلكترونيًا خلال الفترة التي تعلنها عمادة القبول والتسجيل عبر الموقع الرسمي، ولا يُقبل أي طلب بعد انتهاء المواعيد المحددة. كما يمكن متابعة الإعلانات عبر الحساب الرسمي: https://x.com/Register_Ku',
-        language: 'ar',
-        direction: 'rtl',
-      },
-      {
-        id: 2,
-        queryText: 'طيب وين أقدم بالضبط؟',
-        status: 'answered',
-        time: '09:13 AM',
-        response: 'يمكنك التقديم عبر بوابة القبول الإلكترونية لجامعة الكويت من خلال الرابط التالي:\n\nhttps://portal.ku.edu.kw/kuadm/faces/login.jspx?_afrLoop=917086342041201&_afrWindowMode=0&_adf.ctrl-state=3dwyxpr2f_4#TS00000000076=c6a35a6e98e8e8480169c462d521074f4ef9bd837ceb69d597dcde8e2d013833ef',
-        language: 'ar',
-        direction: 'rtl',
-      },
-      {
-        id: 3,
-        queryText: 'بعد ما أقدم هل أقدر أغير التخصصات اللي اخترتها؟',
-        status: 'answered',
-        time: '09:17 AM',
-        response: 'لا، لا يُسمح بتعديل التخصصات بعد انتهاء فترة تقديم الطلبات، لذلك يُنصح باختيار أكبر عدد ممكن من الرغبات قبل الإرسال.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-    ],
-  },
-  {
-    sessionDate: '2026-03-21',
-    queryCount: 3,
-    entries: [
-      {
-        id: 4,
-        queryText: 'القبول للفصل الثاني مفتوح الحين، ليش ما أقدر أقدم على كلية الحقوق؟',
-        status: 'answered',
-        time: '11:05 AM',
-        response: 'لأن بعض الكليات مثل كلية الحقوق يكون القبول فيها للفصل الدراسي الأول فقط، لذلك لا تظهر ضمن خيارات الفصل الثاني.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-      {
-        id: 5,
-        queryText: 'يعني إذا ما انقبلت فيها الحين، شنو أسوي؟',
-        status: 'answered',
-        time: '11:09 AM',
-        response: 'يمكنك التقديم على تخصصات متاحة في الفصل الثاني، ثم لاحقًا التقديم للمنافسة على الكليات التي تقبل في الفصل الأول عند فتح باب القبول للفصل التالي.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-      {
-        id: 6,
-        queryText: 'هل أحتفظ برقمي الجامعي إذا غيرت التخصص لاحقًا؟',
-        status: 'answered',
-        time: '11:13 AM',
-        response: 'نعم، في حال قبولك لاحقًا في تخصص آخر من خلال المنافسة، يتم الاحتفاظ برقمك الجامعي وسجلك الدراسي.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-    ],
-  },
-  {
-    sessionDate: '2026-03-22',
-    queryCount: 1,
-    entries: [
-      {
-        id: 7,
-        queryText: 'أنا خريج أدبي هل يمكنني دخول تخصص تقني؟',
-        status: 'answered',
-        time: '02:00 PM',
-        response: 'التخصصات التقنية والعلمية مثل الهندسة والطب والعلوم تقتصر على خريجي القسم العلمي، لذلك لا يمكن لخريجي القسم الأدبي الالتحاق بها.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-    ],
-  },
-  {
-    sessionDate: '2026-03-23',
-    queryCount: 1,
-    entries: [
-      {
-        id: 8,
-        queryText: 'How do I register for courses after being accepted?',
-        status: 'answered',
-        time: '10:15 AM',
-        response: 'Students register through the Kuwait University portal by accessing Academic Services → Registration Services → Registration, then adding courses to their schedule.\n\nPortal: https://portal.ku.edu.kw/',
-        language: 'en',
-        direction: 'ltr',
-      },
-    ],
-  },
-  {
-    sessionDate: '2026-03-24',
-    queryCount: 1,
-    entries: [
-      {
-        id: 9,
-        queryText: 'أنا معدلي 2.3 وأبغى أعرف كيف أحسب المعدل المتوقع وأبني خطة دراسية، من وين أبدأ؟',
-        status: 'referral',
-        time: '01:20 PM',
-        response: 'يُفضل مراجعة مكتب التوجيه والإرشاد التابع لكليتك، حيث يمكنهم مساعدتك في حساب المعدل ووضع خطة دراسية مناسبة.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-    ],
-  },
-  {
-    sessionDate: '2026-03-25',
-    queryCount: 1,
-    entries: [
-      {
-        id: 10,
-        queryText: 'هل توجد منح دراسية داخل جامعة الكويت وما هي؟',
-        status: 'referral',
-        time: '03:05 PM',
-        response: 'نعم يوجد يمكنك التواصل عبر خدمة "الواتساب" الخاص بالقسم وهو (24984114) أو الحضور لقسم المنح الدراسية بإدارة الإسكان الطلابي وشئون الطلبة الوافدين.',
-        language: 'ar',
-        direction: 'rtl',
-      },
-    ],
-  },
-];
-
-//Make one list of all queries from all sessions for easy reuse.
-export const allQueries: QueryEntry[] = sessionsData.flatMap((s) =>
-  s.entries.map((e) => ({ ...e, sessionDate: s.sessionDate }))
-);
+export type { QueryEntry, Session };
 
 const statusConfig = {
   answered: { label: 'Answered', icon: CheckCircle, color: 'text-green-600' },
@@ -187,15 +41,19 @@ const renderTextWithLinks = (text: string) => {
 //Renders query-log sessions with search/filter controls and CSV export.
 const AdminQueries = () => {
   const navigate = useNavigate();
+  const { data, isLoading, isError } = useAdminQueries();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'answered' | 'referral'>('all');
+
+  const sessions = data?.sessions ?? [];
+  const allQueries = data?.allQueries ?? [];
 
   const totalQueries = allQueries.length;
   const answeredCount = allQueries.filter((q) => q.status === 'answered').length;
   const referralCount = allQueries.filter((q) => q.status === 'referral').length;
 
   //Filter sessions based on search and status
-  const filteredSessions = sessionsData
+  const filteredSessions = sessions
     .map((session) => {
       const filteredEntries = session.entries.filter((e) => {
         const matchesSearch = e.queryText.toLowerCase().includes(search.toLowerCase());
@@ -209,8 +67,8 @@ const AdminQueries = () => {
 
   // Exports all query logs as a CSV file for spreadsheet tools.
   const exportCSV = () => {
-    const headers = ['Session Date', 'Query #', 'Query Text', 'Response', 'Status', 'Time', 'Language'];
-    const rows = sessionsData.flatMap((s) =>
+    const headers = ['Session Date', 'Query ID', 'Query Text', 'Response', 'Status', 'Time', 'Language'];
+    const rows = sessions.flatMap((s) =>
       s.entries.map((e) => [
         s.sessionDate,
         e.id,
@@ -229,7 +87,7 @@ const AdminQueries = () => {
     a.href = url;
     a.download = `query-logs-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    //Release the temporary object URL 
+    //Release the temporary object URL
     URL.revokeObjectURL(url);
   };
 
@@ -237,7 +95,7 @@ const AdminQueries = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-foreground">Query Logs</h2>
-        <Button onClick={exportCSV} variant="outline" className="gap-2">
+        <Button onClick={exportCSV} variant="outline" className="gap-2" disabled={allQueries.length === 0}>
           <Download size={16} />
           Export CSV
         </Button>
@@ -273,7 +131,23 @@ const AdminQueries = () => {
 
       {/* Sessions */}
       <div className="space-y-5">
-        {filteredSessions.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="shadow-sm">
+              <CardContent className="py-4 px-5 space-y-3">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))
+        ) : isError ? (
+          <Card className="shadow-sm">
+            <CardContent className="py-8 text-center text-destructive text-sm">
+              Failed to load queries. Please try again.
+            </CardContent>
+          </Card>
+        ) : filteredSessions.length === 0 ? (
           <Card className="shadow-sm">
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
               No queries found.
@@ -281,7 +155,7 @@ const AdminQueries = () => {
           </Card>
         ) : (
           filteredSessions.map((session) => (
-            <Card key={session.sessionDate} className="shadow-sm overflow-hidden">
+            <Card key={session.sessionId} className="shadow-sm overflow-hidden">
               <CardContent className="py-0 px-0">
                 {/* Session header */}
                 <div className="flex items-center gap-3 px-5 py-3 border-b border-border/60 bg-secondary/30">
@@ -312,9 +186,6 @@ const AdminQueries = () => {
                         {/* Query header row */}
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[11px] font-bold text-muted-foreground tabular-nums w-5">
-                              {entry.id}.
-                            </span>
                             <span className={`flex items-center gap-1 text-xs font-medium ${sc.color}`}>
                               <StatusIcon size={12} />
                               {sc.label}

@@ -1,32 +1,46 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import AcademicBotLogo from '@/components/AcademicBotLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { ApiError } from '@/lib/api';
 
 //Renders the admin sign-in view and manages local credential/error UI state.
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   //Handles form submit by validating inputs and routing on successful auth.
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     // Prevent page refresh so auth feedback stays in React state.
     e.preventDefault();
-    if (!username || !password) {
-      setError('Please enter your username and password');
+    if (!email || !password) {
+      setError('Please enter your email and password');
       return;
     }
-    //Mock auth — replace with Supabase Auth
-    if (username === 'admin' && password === 'admin') {
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await login(email, password);
       navigate('/admin');
-    } else {
-      setError('Invalid username or password');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 //Renders the admin sign-in view and manages local credential/error UI state.
@@ -45,12 +59,14 @@ const AdminLogin = () => {
         {/* Form */}
         <form onSubmit={handleLogin} className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              value={username}
-              onChange={(e) => { setUsername(e.target.value); setError(''); }}
-              placeholder="admin"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(''); }}
+              placeholder="admin@ku.edu.kw"
+              disabled={isLoading}
             />
           </div>
 
@@ -64,6 +80,7 @@ const AdminLogin = () => {
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 placeholder="••••••••"
                 className="pr-10"
+                disabled={isLoading}
               />
               <button
                 type="button"
@@ -77,7 +94,9 @@ const AdminLogin = () => {
 
           {error && <p className="text-destructive text-sm">{error}</p>}
 
-          <Button type="submit" className="w-full">Sign In</Button>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <><Loader2 size={16} className="animate-spin mr-2" /> Signing In...</> : 'Sign In'}
+          </Button>
         </form>
       </div>
     </div>
