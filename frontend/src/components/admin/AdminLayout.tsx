@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import AcademicBotLogo from '@/components/AcademicBotLogo';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { title: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -26,6 +27,7 @@ interface AdminLayoutProps {
 //Persistent layout for all admin pages
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
+  const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -112,14 +114,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <Settings size={16} className="text-muted-foreground" />
                 <span>Settings</span>
               </Link>
-              <Link
-                to="/admin/login"
-                onClick={() => { setProfileOpen(false); setSidebarOpen(false); }}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              <button
+                onClick={() => { setProfileOpen(false); setSidebarOpen(false); logout(); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut size={16} />
                 <span>Logout</span>
-              </Link>
+              </button>
             </div>
           )}
 

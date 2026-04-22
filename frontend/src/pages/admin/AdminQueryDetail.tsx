@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { sessionsData } from './AdminQueries';
-import type { QueryEntry } from './AdminQueries';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAdminQueries } from '@/hooks/useQueries';
+import type { QueryEntry } from '@/lib/types';
 
 const statusConfig = {
   answered: { label: 'Answered', icon: CheckCircle, color: 'text-green-600', badge: 'secondary' as const },
@@ -30,21 +31,40 @@ const renderTextWithLinks = (text: string) => {
 const AdminQueryDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { data, isLoading } = useAdminQueries();
 
-  //Find entry and its session
+  const allQueries = data?.allQueries ?? [];
+
+  //Find entry and its session siblings
   let query: QueryEntry | undefined;
   let sessionDate = '';
-  let sessionEntries: QueryEntry[] = [];
+  let otherEntries: QueryEntry[] = [];
 
-  //Go through sessions once to get the query and its session info.
-  for (const session of sessionsData) {
-    const found = session.entries.find((e) => e.id === Number(id));
-    if (found) {
-      query = found;
-      sessionDate = session.sessionDate;
-      sessionEntries = session.entries;
-      break;
+  if (!isLoading && allQueries.length > 0) {
+    query = allQueries.find((q) => q.id === id);
+    if (query) {
+      const siblings = allQueries.filter((q) => q.sessionId === query!.sessionId);
+      sessionDate = query.createdAt.split('T')[0];
+      otherEntries = siblings.filter((q) => q.id !== query!.id);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <Button variant="ghost" onClick={() => navigate('/admin/queries')} className="gap-2 -ml-2">
+          <ArrowLeft size={16} />
+          Back to Query Logs
+        </Button>
+        <Card className="shadow-sm">
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!query) {
@@ -61,8 +81,6 @@ const AdminQueryDetail = () => {
 
   const sc = statusConfig[query.status];
   const StatusIcon = sc.icon;
-  //Remove the current query so this list shows only other queries.
-  const otherEntries = sessionEntries.filter((e) => e.id !== query!.id);
 
   return (
     <div className="space-y-6 max-w-3xl">

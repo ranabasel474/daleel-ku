@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Pencil, Trash2, Upload } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Upload, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,17 +19,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-//Defines the shape of a knowledge-base document and some static options for form fields.
-interface Document {
-  id: number;
-  title: string;
-  type: string;
-  college: string;
-  topic: string;
-  dateAdded: string;
-  sourceUrl: string;
-}
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument } from '@/hooks/useDocuments';
 
 //Predefined options for select fields in the add/edit form.
 const colleges = [
@@ -46,26 +38,25 @@ const topics = [
 //Predefined document types for the type select field in the add/edit form.
 const docTypes = ['PDF', 'HTML', 'DOCX', 'URL'];
 
-//Initial set of documents to populate the knowledge base before we connect the backend. Stored as an array of Document objects.
-const initialDocs: Document[] = [
-  { id: 1, title: 'KU Official Website', type: 'URL', college: 'All Colleges', topic: 'Student Services', dateAdded: '2025-03-20', sourceUrl: 'https://www.ku.edu.kw/' },
-  { id: 2, title: 'Vice Dean for Student Affairs for CLS', type: 'URL', college: 'CLS', topic: 'Student Services', dateAdded: '2025-03-18', sourceUrl: 'https://www.instagram.com/vdsa_cls/' },
-  { id: 3, title: 'Deanship of Admission and Registration — Official Account', type: 'URL', college: 'All Colleges', topic: 'Admissions', dateAdded: '2025-03-15', sourceUrl: 'https://x.com/Register_Ku' },
-  { id: 4, title: 'Student Handbook 2025/2026', type: 'PDF', college: 'All Colleges', topic: 'Regulations', dateAdded: '2025-03-12', sourceUrl: '' },
-];
-
 //Defines an empty form state for resetting the add/edit dialog when opening it for a new document.
 const emptyForm = { title: '', type: 'PDF', college: 'All Colleges', topic: 'Admissions', sourceUrl: '' };
 
-//Renders the knowledge-base admin page and manages in-memory CRUD state for documents.
+//Renders the knowledge-base admin page with real API-backed CRUD for documents.
 const AdminKnowledge = () => {
-  const [docs, setDocs] = useState<Document[]>(initialDocs);
+  const { data: docs = [], isLoading, isError } = useDocuments();
+  const createDoc = useCreateDocument();
+  const updateDoc = useUpdateDocument();
+  const deleteDoc = useDeleteDocument();
+  const { toast } = useToast();
+
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const isSaving = createDoc.isPending || updateDoc.isPending;
 
   const filtered = docs.filter((d) =>
     d.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -81,7 +72,7 @@ const AdminKnowledge = () => {
   };
 
   //Opens the edit dialog and preloads form fields from the selected document.
-  const openEdit = (doc: Document) => {
+  const openEdit = (doc: { id: string; title: string; type: string; college: string; topic: string; sourceUrl: string }) => {
     setEditId(doc.id);
     setForm({ title: doc.title, type: doc.type, college: doc.college, topic: doc.topic, sourceUrl: doc.sourceUrl });
     setFormErrors({});
@@ -96,33 +87,42 @@ const AdminKnowledge = () => {
     return Object.keys(errors).length === 0;
   };
 
-  //Persists form data into state by updating the current document or prepending a new one.
+  //Persists form data via the API.
   const handleSave = () => {
     if (!validate()) return;
+
+    const payload = {
+      title: form.title.trim(),
+      source_url: form.sourceUrl,
+      document_type: form.type,
+    };
+
     if (editId !== null) {
-      setDocs((prev) => prev.map((d) => d.id === editId ? { ...d, ...form, title: form.title.trim() } : d));
+      updateDoc.mutate(
+        { id: editId, data: payload },
+        {
+          onSuccess: () => setModalOpen(false),
+          onError: (err) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+        },
+      );
     } else {
-      const newDoc: Document = {
-        //Date.now gives a simple unique-enough id for local/demo state.
-        id: Date.now(),
-        title: form.title.trim(),
-        type: form.type,
-        college: form.college,
-        topic: form.topic,
-        //Store as YYYY-MM-DD so table formatting is consistent later.
-        dateAdded: new Date().toISOString().split('T')[0],
-        sourceUrl: form.sourceUrl,
-      };
-      setDocs((prev) => [newDoc, ...prev]);
+      createDoc.mutate(payload, {
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+      });
     }
-    setModalOpen(false);
   };
 
-  //Removes the selected document from state and clears the pending delete selection.
+  //Deletes the selected document via the API.
   const handleDelete = () => {
     if (deleteId !== null) {
-      setDocs((prev) => prev.filter((d) => d.id !== deleteId));
-      setDeleteId(null);
+      deleteDoc.mutate(deleteId, {
+        onSuccess: () => setDeleteId(null),
+        onError: (err) => {
+          setDeleteId(null);
+          toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        },
+      });
     }
   };
 
@@ -164,7 +164,25 @@ const AdminKnowledge = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-destructive py-8">
+                      Failed to load documents. Please try again.
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No documents found.
@@ -180,7 +198,7 @@ const AdminKnowledge = () => {
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{doc.college}</TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{doc.topic}</TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground tabular-nums">
-                        {new Date(doc.dateAdded).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {doc.dateAdded !== '—' ? new Date(doc.dateAdded).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                       </TableCell>
                       <TableCell className="hidden xl:table-cell text-sm text-muted-foreground max-w-[160px] truncate">
                         {doc.sourceUrl || '—'}
@@ -266,6 +284,7 @@ const AdminKnowledge = () => {
                     {colleges.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">Assigned during ingestion</p>
               </div>
               <div className="space-y-2">
                 <Label>Topic</Label>
@@ -275,12 +294,15 @@ const AdminKnowledge = () => {
                     {topics.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-muted-foreground">Assigned during ingestion</p>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editId !== null ? 'Save Changes' : 'Add Document'}</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <><Loader2 size={16} className="animate-spin mr-2" /> Saving...</> : editId !== null ? 'Save Changes' : 'Add Document'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -296,8 +318,8 @@ const AdminKnowledge = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteDoc.isPending}>
+              {deleteDoc.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -6,29 +6,28 @@ import { Button } from '@/components/ui/button';
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from '@/components/ui/table';
-import { allQueries } from '@/pages/admin/AdminQueries';
-
-//Static Data for demo purposes until we connect the backend.
-const initialDocs = [
-  { id: 1, title: 'KU Official Website', type: 'URL', topic: 'Student Services', college: 'All Colleges', dateAdded: '2025-03-20' },
-  { id: 2, title: 'Vice Dean for Student Affairs for CLS', type: 'URL', topic: 'Student Services', college: 'CLS', dateAdded: '2025-03-18' },
-  { id: 3, title: 'Deanship of Admission and Registration — Official Account', type: 'URL', topic: 'Admissions', college: 'All Colleges', dateAdded: '2025-03-15' },
-  { id: 4, title: 'Student Handbook 2025/2026', type: 'PDF', topic: 'Regulations', college: 'All Colleges', dateAdded: '2025-03-12' },
-];
+import { Skeleton } from '@/components/ui/skeleton';
+import { useDocuments } from '@/hooks/useDocuments';
+import { useAdminQueries } from '@/hooks/useQueries';
 
 //Renders the admin overview with aggregate metrics plus recent query/content snapshots.
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { data: docs = [], isLoading: docsLoading } = useDocuments();
+  const { data: queryData, isLoading: queriesLoading } = useAdminQueries();
 
-  const totalDocs = initialDocs.length;
+  const allQueries = queryData?.allQueries ?? [];
+  const isLoading = docsLoading || queriesLoading;
+
+  const totalDocs = docs.length;
   const totalQueries = allQueries.length;
   const answeredCount = allQueries.filter((q) => q.status === 'answered').length;
   const referralCount = allQueries.filter((q) => q.status === 'referral').length;
 
-  //Show the newest queries first while keeping the source array unchanged.
-  const recentQueries = allQueries.slice(-5).reverse();
-  //Sort by ISO date string and keep only the latest three entries for the summary table.
-  const recentDocs = [...initialDocs].sort((a, b) => b.dateAdded.localeCompare(a.dateAdded)).slice(0, 3);
+  //Show the newest queries first.
+  const recentQueries = allQueries.slice(0, 5);
+  //Sort by date and keep only the latest three entries for the summary table.
+  const recentDocs = [...docs].sort((a, b) => b.dateAdded.localeCompare(a.dateAdded)).slice(0, 3);
 
   //Keeps card rendering declarative so labels/icons/counts stay in one place.
   const stats = [
@@ -50,7 +49,11 @@ const AdminDashboard = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-1 text-foreground tabular-nums">{stat.value}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-12 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold mt-1 text-foreground tabular-nums">{stat.value}</p>
+                  )}
                 </div>
                 <div className={`p-2.5 rounded-lg bg-secondary ${stat.color}`}>
                   <stat.icon size={18} />
@@ -79,27 +82,41 @@ const AdminDashboard = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentQueries.map((q) => (
-                <TableRow
-                  key={q.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/admin/queries/${q.id}`)}
-                >
-                  <TableCell dir={q.direction} className="truncate max-w-[300px]">{q.queryText}</TableCell>
-                  <TableCell>
-                    {q.status === 'answered' ? (
-                      <Badge variant="secondary" className="text-green-600 text-[11px] gap-1">
-                        <CheckCircle size={12} /> Answered
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="text-[11px] gap-1">
-                        <XCircle size={12} /> Referral
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs tabular-nums">{q.time}</TableCell>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  </TableRow>
+                ))
+              ) : recentQueries.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-6 text-sm">No queries yet.</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                recentQueries.map((q) => (
+                  <TableRow
+                    key={q.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/admin/queries/${q.id}`)}
+                  >
+                    <TableCell dir={q.direction} className="truncate max-w-[300px]">{q.queryText}</TableCell>
+                    <TableCell>
+                      {q.status === 'answered' ? (
+                        <Badge variant="secondary" className="text-green-600 text-[11px] gap-1">
+                          <CheckCircle size={12} /> Answered
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" className="text-[11px] gap-1">
+                          <XCircle size={12} /> Referral
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs tabular-nums">{q.time}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -126,15 +143,31 @@ const AdminDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentDocs.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell className="font-medium text-sm max-w-[200px] truncate">{doc.title}</TableCell>
-                    <TableCell><Badge variant="secondary" className="text-[11px]">{doc.type}</Badge></TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{doc.topic}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{doc.college}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs tabular-nums">{doc.dateAdded}</TableCell>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : recentDocs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6 text-sm">No documents yet.</TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  recentDocs.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium text-sm max-w-[200px] truncate">{doc.title}</TableCell>
+                      <TableCell><Badge variant="secondary" className="text-[11px]">{doc.type}</Badge></TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{doc.topic}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{doc.college}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs tabular-nums">{doc.dateAdded}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
