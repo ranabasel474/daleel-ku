@@ -64,7 +64,10 @@ GPA_SYSTEM_PROMPT = (
     "- When retaken, the new grade replaces the old one in GPA calculation\n\n"
     "Always end your response with this disclaimer:\n"
     "This is an estimated GPA for reference only. \n"
-    "Please verify with your official academic record."
+    "Please verify with your official academic record.\n\n"
+    "Do not mention your training data cutoff date. "
+    "Do not say when you were trained. "
+    "Do not add any disclaimers about your knowledge cutoff."
 )
 
 #Handles GPA questions directly using the KU grade scale prompt
