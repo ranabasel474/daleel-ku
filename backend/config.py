@@ -57,9 +57,9 @@ if not LLAMA_CLOUD_API_KEY:
     raise ValueError("LLAMA_CLOUD_API_KEY environment variable is not set")
 
 #For future ingestion integration - when Firecrawl API key is available
-# FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
-# if not FIRECRAWL_API_KEY:
-#     raise ValueError("FIRECRAWL_API_KEY environment variable is not set")
+FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
+if not FIRECRAWL_API_KEY:
+    raise ValueError("FIRECRAWL_API_KEY environment variable is not set")
 
 #For future ingestion integration - when Apify API key is available
 # APIFY_API_KEY = os.getenv("APIFY_API_KEY")
