@@ -22,6 +22,9 @@ firecrawl-py
 # Social media scraping
 apify-client
 
+# LaTeX to plain text conversion
+pylatexenc
+
 # Admin password hashing
 bcrypt
 
