@@ -1,5 +1,6 @@
 import json
 from llama_index.core.llms import ChatMessage
+from llama_index.core.memory import ChatMemoryBuffer
 from config import llm
 
 #Fallback replies used when the context does not contain the needed answer
@@ -62,18 +63,21 @@ GPA_SYSTEM_PROMPT = (
     "### Retake Policy:\n\n"
     "- Only grades C-, D+, D, F, FA can be retaken\n"
     "- When retaken, the new grade replaces the old one in GPA calculation\n\n"
-    "Always end your response with this disclaimer:\n"
-    "This is an estimated GPA for reference only. \n"
-    "Please verify with your official academic record.\n\n"
-    "Do not mention your training data cutoff date. "
-    "Do not say when you were trained. "
-    "Do not add any disclaimers about your knowledge cutoff."
+    "## Presentation Rules:\n"
+    "- Write all arithmetic inline on a single line (e.g. '3 × 4.00 = 12.00').\n"
+    "- For cumulative GPA, substitute values once and show the result — do not rewrite the formula multiple times.\n"
+    "- Do not use LaTeX, fractions, or code blocks.\n\n"
+    "## Language Rule:\n"
+    "Detect the language of the student's question. "
+    "Always reply in the same language as the question."
 )
 
 #Handles GPA questions directly using the KU grade scale prompt
-def handle_gpa_query(query: str) -> dict:
+def handle_gpa_query(query: str, memory: ChatMemoryBuffer | None = None) -> dict:
+    history = memory.get() if memory else []
     messages = [
         ChatMessage(role="system", content=GPA_SYSTEM_PROMPT),
+        *history,
         ChatMessage(role="user", content=query),
     ]
 
@@ -83,7 +87,7 @@ def handle_gpa_query(query: str) -> dict:
     return {"answer": answer, "was_answered": True}
 
 #Builds a grounded answer from retrieved context and returns answer metadata
-def generate_response(search_result: dict, query: str) -> dict:
+def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer | None = None) -> dict:
     context = search_result.get("context", "")
     source_url = search_result.get("source_url")
     source_name = search_result.get("source_name")
@@ -98,8 +102,10 @@ def generate_response(search_result: dict, query: str) -> dict:
         f"Question:\n{query}"
     )
 
+    history = memory.get() if memory else []
     messages = [
         ChatMessage(role="system", content=SYSTEM_PROMPT),
+        *history,
         ChatMessage(role="user", content=user_content),
     ]
 

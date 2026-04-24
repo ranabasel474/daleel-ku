@@ -6,15 +6,32 @@ from config import supabase_admin, OPENAI_API_KEY
 from rag.ingest import build_index
 from rag.query_engine import search_query
 from rag.response import generate_response, handle_gpa_query
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.llms import ChatMessage
+from pylatexenc.latex2text import LatexNodes2Text
 
 #OpenAI client used only to classify the query type
 _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 
 index = build_index()
 
+session_memories: dict[str, ChatMemoryBuffer] = {}
+
 chat_bp = Blueprint("chat", __name__)  # Chat API routes
 
 MAX_QUERY_LENGTH = 1000
+
+GPA_DISCLAIMER_AR = "هذا تقدير للمعدل لأغراض المرجعية فقط. يرجى التحقق من سجلك الأكاديمي الرسمي."
+GPA_DISCLAIMER_EN = "This is an estimated GPA for reference only. Please verify with your official academic record."
+
+_latex_converter = LatexNodes2Text()
+
+
+def format_gpa_response(answer, query_text):
+    answer = _latex_converter.latex_to_text(answer)
+    is_arabic = any('؀' <= ch <= 'ۿ' for ch in query_text)
+    disclaimer = GPA_DISCLAIMER_AR if is_arabic else GPA_DISCLAIMER_EN
+    return f"{answer}\n\n{disclaimer}"
 
 # Validates the student query before processing
 def validate_query(text):
@@ -63,7 +80,13 @@ def query():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
     session_id = data.get("session_id") if data else None
-    
+
+    memory = None
+    if session_id:
+        if session_id not in session_memories:
+            session_memories[session_id] = ChatMemoryBuffer.from_defaults(token_limit=3000)
+        memory = session_memories[session_id]
+
     # 1) validate query
     is_valid, error_message = validate_query(query_text)
     if not is_valid:
@@ -74,10 +97,11 @@ def query():
 
     # 3) Process query based on its type
     if query_type == "gpa":
-        result = handle_gpa_query(query_text)
+        result = handle_gpa_query(query_text, memory=memory)
+        result["answer"] = format_gpa_response(result["answer"], query_text)
     else:
         search_result = search_query(index, query_text)
-        result = generate_response(search_result, query_text)
+        result = generate_response(search_result, query_text, memory=memory)
 
     # 4) Log the query and response to Supabase    
     response_text = result["answer"]
@@ -100,6 +124,10 @@ def query():
 
     except Exception as e:
         print(f"Warning: failed to log query to Supabase — {e}")
+
+    if memory is not None:
+        memory.put(ChatMessage(role="user", content=query_text))
+        memory.put(ChatMessage(role="assistant", content=response_text))
 
     # 5) Return the response to the student
     return jsonify({
@@ -134,6 +162,7 @@ def end_session(session_id):
             "ended_at": datetime.now(timezone.utc).isoformat()
         }).eq("session_id", session_id).execute()
 
+        session_memories.pop(session_id, None)
         return jsonify({"session_id": session_id}), 200
     
     # Raise an error when session_id is invalid or database update fails
