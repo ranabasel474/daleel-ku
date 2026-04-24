@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Search, Pencil, Trash2, Upload, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Upload, Loader2, Link } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,15 +19,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument, useUploadDocument } from '@/hooks/useDocuments';
-
-//Predefined options for select fields in the add/edit form.
-const colleges = [
-  'All Colleges', 'Engineering', 'Science', 'Arts', 'Law', 'Medicine',
-  'Education', 'Business Administration', 'Sharia & Islamic Studies',
-];
+import { useDocuments, useCreateDocument, useUpdateDocument, useDeleteDocument, useUploadDocument, useColleges } from '@/hooks/useDocuments';
 
 //Predefined topics for select fields in the add/edit form.
 const topics = [
@@ -39,11 +34,12 @@ const topics = [
 const docTypes = ['PDF', 'HTML', 'DOCX', 'URL'];
 
 //Defines an empty form state for resetting the add/edit dialog when opening it for a new document.
-const emptyForm = { title: '', type: 'PDF', college: 'All Colleges', topic: 'Admissions', sourceUrl: '' };
+const emptyForm = { title: '', type: 'PDF', college: '', topic: 'Admissions', sourceUrl: '' };
 
 //Renders the knowledge-base admin page with real API-backed CRUD for documents.
 const AdminKnowledge = () => {
   const { data: docs = [], isLoading, isError } = useDocuments();
+  const { data: colleges = [] } = useColleges();
   const createDoc = useCreateDocument();
   const updateDoc = useUpdateDocument();
   const deleteDoc = useDeleteDocument();
@@ -58,6 +54,8 @@ const AdminKnowledge = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [ingestMode, setIngestMode] = useState<'upload' | 'url'>('upload');
+  const [pdfUrl, setPdfUrl] = useState('');
 
   const isSaving = createDoc.isPending || updateDoc.isPending || uploadDoc.isPending;
 
@@ -72,6 +70,8 @@ const AdminKnowledge = () => {
     setForm(emptyForm);
     setFormErrors({});
     setSelectedFile(null);
+    setIngestMode('upload');
+    setPdfUrl('');
     if (fileInputRef.current) fileInputRef.current.value = '';
     setModalOpen(true);
   };
@@ -88,6 +88,11 @@ const AdminKnowledge = () => {
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!form.title.trim()) errors.title = 'Title is required';
+    if (!editId && ingestMode === 'url') {
+      if (!pdfUrl.trim() || !pdfUrl.startsWith('http')) {
+        errors.pdfUrl = 'A valid PDF URL is required';
+      }
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -271,53 +276,84 @@ const AdminKnowledge = () => {
               {formErrors.title && <p className="text-destructive text-xs">{formErrors.title}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label>Document Type</Label>
-              <Select dir="ltr" value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {editId && (
+              <div className="space-y-2">
+                <Label>Document Type</Label>
+                <Select dir="ltr" value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {docTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label>Source URL</Label>
-              <Input
-                value={form.sourceUrl}
-                onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
+            {editId && (
+              <div className="space-y-2">
+                <Label>Source URL</Label>
+                <Input
+                  value={form.sourceUrl}
+                  onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+            )}
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                setSelectedFile(file);
-                if (file) setForm((f) => ({ ...f, type: 'PDF', title: f.title || file.name.replace(/\.pdf$/i, '') }));
-              }}
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-3 p-3 border border-dashed border-border rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
-            >
-              <Upload size={18} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {selectedFile ? selectedFile.name : 'Upload PDF'}
-              </span>
-            </div>
+            {!editId && (
+              <Tabs value={ingestMode} onValueChange={(v) => setIngestMode(v as 'upload' | 'url')}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="upload" className="flex-1 gap-2">
+                    <Upload size={14} /> Upload PDF
+                  </TabsTrigger>
+                  <TabsTrigger value="url" className="flex-1 gap-2">
+                    <Link size={14} /> From URL
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setSelectedFile(file);
+                      if (file) setForm((f) => ({ ...f, type: 'PDF', title: f.title || file.name.replace(/\.pdf$/i, '') }));
+                    }}
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-3 p-3 border border-dashed border-border rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                  >
+                    <Upload size={18} className="text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {selectedFile ? selectedFile.name : 'Click to select a PDF file'}
+                    </span>
+                  </div>
+                </TabsContent>
+                <TabsContent value="url">
+                  <div className="space-y-2">
+                    <Input
+                      value={pdfUrl}
+                      onChange={(e) => { setPdfUrl(e.target.value); setFormErrors({}); }}
+                      placeholder="https://example.com/document.pdf"
+                    />
+                    {formErrors.pdfUrl && <p className="text-destructive text-xs">{formErrors.pdfUrl}</p>}
+                    <p className="text-[11px] text-muted-foreground">
+                      Direct link to a PDF file. It will be downloaded and processed.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>College</Label>
                 <Select dir="ltr" value={form.college} onValueChange={(v) => setForm({ ...form, college: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select college" /></SelectTrigger>
                   <SelectContent>
-                    {colleges.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {colleges.map((c) => <SelectItem key={c.college_id} value={c.college_name}>{c.college_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">Assigned during ingestion</p>
@@ -325,7 +361,7 @@ const AdminKnowledge = () => {
               <div className="space-y-2">
                 <Label>Topic</Label>
                 <Select dir="ltr" value={form.topic} onValueChange={(v) => setForm({ ...form, topic: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
                   <SelectContent>
                     {topics.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>

@@ -72,6 +72,7 @@ def add_document():
         return jsonify({"error": "Request body is required"}), 400
 
     try:
+        data["admin_id"] = request.admin_payload.id
         response = supabase_admin.table("document").insert(data).execute()
         return jsonify({"document": response.data[0]}), 201
     except Exception as e:
@@ -158,6 +159,7 @@ def upload_document():
             "title": title,
             "source_url": storage_url,
             "document_type": "PDF",
+            "admin_id": request.admin_payload.id,
         }
         doc_response = supabase_admin.table("document").insert(doc_data).execute()
         document = doc_response.data[0]
@@ -177,6 +179,26 @@ def upload_document():
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
 
+
+#Returns all colleges
+@admin_bp.route("/colleges", methods=["GET"])
+@require_auth
+def get_colleges():
+    try:
+        response = supabase_admin.table("college").select("college_id, college_name").execute()
+        return jsonify({"colleges": response.data or []}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+#Returns all topics
+@admin_bp.route("/topics", methods=["GET"])
+@require_auth
+def get_topics():
+    try:
+        response = supabase_admin.table("topic").select("topic_id, topic_name").execute()
+        return jsonify({"topics": response.data or []}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 #Returns all user_query rows ordered by created_at descending
 @admin_bp.route("/queries", methods=["GET"])
