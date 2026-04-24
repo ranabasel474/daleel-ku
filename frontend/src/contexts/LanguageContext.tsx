@@ -22,7 +22,7 @@ const translations = {
     sources: 'Sources',
     sourceLabel: 'Source:',
     serverError: 'Sorry, the server is currently unavailable.',
-    welcomeMessage: 'مرحباً! أنا دليل، مساعدك الأكاديمي لجامعة الكويت. كيف يمكنني مساعدتك اليوم؟',
+    welcomeMessage: "Hello! I'm Daleel, your academic assistant at Kuwait University. How can I help you today?",
     headerAriaLabel: 'Daleel KU header',
     chatAreaAriaLabel: 'Chat messages',
     inputBarAriaLabel: 'Message input area',

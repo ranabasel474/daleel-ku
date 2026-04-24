@@ -72,30 +72,15 @@ def detect_query_type(text):
         return "general"
 
 
-@chat_bp.route("/query", methods=["POST"])  # Query endpoint 
-@limiter.limit("30 per minute")  # Per-IP rate limit
-
-# Main query handler 
-def query():
-    data = request.get_json()
-    query_text = data.get("message", "") if data else ""
-    session_id = data.get("session_id") if data else None
-
+# Shared helper — runs GPA or RAG handler and returns a Flask response tuple
+def _process_and_respond(query_text, session_id, query_type):
     memory = None
     if session_id:
         if session_id not in session_memories:
             session_memories[session_id] = ChatMemoryBuffer.from_defaults(token_limit=3000)
         memory = session_memories[session_id]
 
-    # 1) validate query
-    is_valid, error_message = validate_query(query_text)
-    if not is_valid:
-        return jsonify({"error": error_message}), 400
-    
-    # 2) Classify query type
-    query_type = detect_query_type(query_text)
-
-    # 3) Process query based on its type
+    # Process query based on its type
     if query_type == "gpa":
         result = handle_gpa_query(query_text, memory=memory)
         result["answer"] = format_gpa_response(result["answer"], query_text)
@@ -103,7 +88,7 @@ def query():
         search_result = search_query(index, query_text)
         result = generate_response(search_result, query_text, memory=memory)
 
-    # 4) Log the query and response to Supabase    
+    # Log the query and response to Supabase
     response_text = result["answer"]
     was_answered = result["was_answered"]
     source_url = result.get("source_url")
@@ -129,13 +114,75 @@ def query():
         memory.put(ChatMessage(role="user", content=query_text))
         memory.put(ChatMessage(role="assistant", content=response_text))
 
-    # 5) Return the response to the student
+    # Return the response to the student
     return jsonify({
         "response": response_text,
         "was_answered": was_answered,
         "source_url": source_url,
         "source_name": source_name,
     }), 200
+
+
+@chat_bp.route("/query", methods=["POST"])  # Query endpoint
+@limiter.limit("30 per minute")  # Per-IP rate limit
+
+# Main query handler — kept unchanged for backward compatibility with test.py
+def query():
+    data = request.get_json()
+    query_text = data.get("message", "") if data else ""
+    session_id = data.get("session_id") if data else None
+
+    # 1) validate query
+    is_valid, error_message = validate_query(query_text)
+    if not is_valid:
+        return jsonify({"error": error_message}), 400
+
+    # 2) Classify query type
+    query_type = detect_query_type(query_text)
+
+    # 3) Process and return
+    return _process_and_respond(query_text, session_id, query_type)
+
+
+@chat_bp.route("/query/classify", methods=["POST"])  # Classify-only endpoint
+@limiter.limit("30 per minute")  # Per-IP rate limit
+
+# Step 1 of the split flow — validates and classifies only, no RAG or response generation
+def query_classify():
+    data = request.get_json()
+    query_text = data.get("message", "") if data else ""
+
+    # 1) Validate query
+    is_valid, error_message = validate_query(query_text)
+    if not is_valid:
+        return jsonify({"error": error_message}), 400
+
+    # 2) Classify and return immediately
+    query_type = detect_query_type(query_text)
+    return jsonify({"query_type": query_type}), 200
+
+
+@chat_bp.route("/query/complete", methods=["POST"])  # Completion endpoint
+@limiter.limit("30 per minute")  # Per-IP rate limit
+
+# Step 2 of the split flow — skips classification, goes straight to RAG or GPA handler
+def query_complete():
+    data = request.get_json()
+    query_text = data.get("message", "") if data else ""
+    session_id = data.get("session_id") if data else None
+    query_type = data.get("query_type", "general")
+
+    # 1) Validate query
+    is_valid, error_message = validate_query(query_text)
+    if not is_valid:
+        return jsonify({"error": error_message}), 400
+
+    # 2) Guard against unexpected query_type values
+    if query_type not in ("gpa", "general"):
+        return jsonify({"error": "query_type must be 'gpa' or 'general'."}), 400
+
+    # 3) Process and return
+    return _process_and_respond(query_text, session_id, query_type)
 
 
 #Creates a new session row and returns the session_id

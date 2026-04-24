@@ -33,6 +33,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,6 +64,13 @@ const Index = () => {
   useEffect(() => {
     startSession();
   }, [startSession]);
+
+  // Update the welcome message whenever the language changes.
+  useEffect(() => {
+    setMessages(prev =>
+      prev.map(msg => (msg.id === 1 ? { ...msg, content: t.welcomeMessage } : msg))
+    );
+  }, [t.welcomeMessage]);
 
   //Keep the newest session ID in this ref so endSession can use it.
   useEffect(() => {
@@ -146,7 +154,11 @@ const Index = () => {
         body: JSON.stringify({ message: userMsg.content, session_id: sessionId }),
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: data.response, timestamp: ts }]);
+      const regenSources =
+        data.was_answered && data.source_url
+          ? [{ title: data.source_name || data.source_url, url: data.source_url }]
+          : undefined;
+      setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: data.response, timestamp: ts, sources: regenSources }]);
     } catch {
       setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: t.serverError, timestamp: ts }]);
     } finally {
@@ -161,7 +173,10 @@ const Index = () => {
     setTimeout(() => hamburgerRef.current?.focus(), 100);
   };
 
-  //Sends a user message, requests a bot response and appends both to chat history.
+  //Returns true if the query text contains Arabic characters.
+  const isArabicText = (text: string) => /[؀-ۿ]/.test(text);
+
+  //Sends a user message using a two-step classify → complete flow, updating status at each stage.
   const handleSend = async (text: string) => {
     const now = new Date();
     const hours = now.getHours();
@@ -180,18 +195,51 @@ const Index = () => {
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
+    const arabic = isArabicText(text);
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/query`, {
+      // Step 1 — classify the query and show classifying status
+      setStatusMessage(arabic ? 'جاري تحليل سؤالك' : 'Understanding your question');
+
+      const classifyRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/query/classify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, session_id: sessionId }),
+        body: JSON.stringify({ message: text }),
       });
-      const data = await res.json();
+      const classifyData = await classifyRes.json();
+      const queryType: string = classifyData.query_type ?? 'general';
+
+      // Step 2 — show search status for general queries, skip it for GPA
+      if (queryType === 'general') {
+        setStatusMessage(arabic ? 'جاري البحث عن المصادر المناسبة' : 'Looking for relevant resources');
+      } else {
+        setStatusMessage(arabic ? 'جاري كتابة إجابة سؤالك' : 'Generating your answer');
+      }
+
+      const completeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/query/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, session_id: sessionId, query_type: queryType }),
+      });
+
+      // Switch to generating status once the RAG search is done and we await the LLM
+      if (queryType === 'general') {
+        setStatusMessage(arabic ? 'جاري كتابة إجابة سؤالك' : 'Generating your answer');
+      }
+
+      const data = await completeRes.json();
+
+      const sources =
+        data.was_answered && data.source_url
+          ? [{ title: data.source_name || data.source_url, url: data.source_url }]
+          : undefined;
+
       const botMsg: Message = {
         id: Date.now() + 1,
         role: 'bot',
         content: data.response,
         timestamp: ts,
+        sources,
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch {
@@ -204,6 +252,7 @@ const Index = () => {
       setMessages((prev) => [...prev, botMsg]);
     } finally {
       setIsTyping(false);
+      setStatusMessage('');
     }
   };
 
@@ -237,7 +286,7 @@ const Index = () => {
                 />
               );
             })}
-            {isTyping && <TypingIndicator />}
+            {isTyping && <TypingIndicator statusMessage={statusMessage} />}
           </div>
 
           {showScrollBtn && (

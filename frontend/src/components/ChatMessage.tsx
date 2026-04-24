@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Copy, Check, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ReactMarkdown from 'react-markdown';
 
 interface Source {
   title: string;
@@ -50,9 +51,9 @@ const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMe
         <div className="flex max-w-[85%] md:max-w-[75%]">
           <div className="flex-1">
             <div className={`group hc-bot-bubble bg-card rounded-2xl px-4 py-3 shadow-[0_1px_6px_-1px_hsl(var(--primary)/0.08)] border border-border/60 ${isRTL ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-              <p className="text-[15px] md:text-base leading-relaxed whitespace-pre-wrap text-bot-text" dir="auto">
-                {content}
-              </p>
+              <div className="text-[15px] md:text-base leading-relaxed text-bot-text prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:text-bot-text prose-strong:text-bot-text" dir="auto">
+                <ReactMarkdown>{content}</ReactMarkdown>
+              </div>
               <span className="hidden">{timestamp}</span>
             </div>
 

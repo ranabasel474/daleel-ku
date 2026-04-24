@@ -120,8 +120,4 @@ def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer 
         answer = raw
         was_answered = False
 
-    #Add source citation only when we have a valid answered result
-    if was_answered and source_name and source_url:
-        answer = f"{answer}\n\nالمصدر: [{source_name}]({source_url})"
-
     return {"answer": answer, "was_answered": was_answered, "source_url": source_url, "source_name": source_name}

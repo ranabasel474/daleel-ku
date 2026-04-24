@@ -1,6 +1,7 @@
 import re
 from llama_index.core import VectorStoreIndex
 from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterCondition
+from config import supabase_admin
 
 TOP_K = 5  #number of chunks passed to the LLM
 TOP_K = 5
@@ -65,8 +66,18 @@ def search_query(
     top_meta = nodes[0].metadata or {}
     source_name = top_meta.get("file_name") or top_meta.get("source") or None
 
+    document_id = top_meta.get("db_document_id") or top_meta.get("document_id")
+    source_url = None
+    if document_id:
+        try:
+            doc_result = supabase_admin.table("document").select("source_url").eq("document_id", document_id).execute()
+            if doc_result.data:
+                source_url = doc_result.data[0].get("source_url")
+        except Exception:
+            pass
+
     return {
         "context": _label_nodes(nodes),
-        "source_url": None,
+        "source_url": source_url,
         "source_name": source_name,
     }
