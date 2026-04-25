@@ -68,13 +68,17 @@ def search_query(
 
     document_id = top_meta.get("db_document_id") or top_meta.get("document_id")
     source_url = None
+    print(f"[retrieval] top chunk metadata keys: {list(top_meta.keys())}")
+    print(f"[retrieval] document_id for lookup: {document_id}")
     if document_id:
         try:
             doc_result = supabase_admin.table("document").select("source_url").eq("document_id", document_id).execute()
+            print(f"[retrieval] document lookup result: {doc_result.data}")
             if doc_result.data:
                 source_url = doc_result.data[0].get("source_url")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[retrieval] source_url lookup failed: {e}")
+    print(f"[retrieval] source_url={source_url} source_name={source_name}")
 
     return {
         "context": _label_nodes(nodes),

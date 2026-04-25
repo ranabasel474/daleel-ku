@@ -253,7 +253,7 @@ def _handle_pdf(
         document_id = _upsert_document(
             title=filename,
             document_type="pdf",
-            source_url=storage_url,
+            source_url=pdf_url,
             source_id=source_id,
             major_id=None,
         )
