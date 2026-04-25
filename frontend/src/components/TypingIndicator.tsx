@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TypingIndicatorProps {
@@ -7,6 +8,28 @@ interface TypingIndicatorProps {
 //Renders the animated typing bubble shown while the bot response is loading.
 const TypingIndicator = ({ statusMessage }: TypingIndicatorProps) => {
   const { t, isRTL } = useLanguage();
+
+  //Tracks the text currently visible in the bubble and its opacity state.
+  const [displayed, setDisplayed] = useState(statusMessage ?? '');
+  const [visible, setVisible] = useState(!!statusMessage);
+
+  useEffect(() => {
+    if (statusMessage === displayed) return;
+
+    if (displayed) {
+      //Fade out the current text, then swap to the new one and fade in.
+      setVisible(false);
+      const swap = setTimeout(() => {
+        setDisplayed(statusMessage ?? '');
+        setVisible(!!statusMessage);
+      }, 150);
+      return () => clearTimeout(swap);
+    } else {
+      //No current text — just fade the new text straight in.
+      setDisplayed(statusMessage ?? '');
+      setVisible(!!statusMessage);
+    }
+  }, [statusMessage]);
 
   return (
     <div
@@ -18,9 +41,13 @@ const TypingIndicator = ({ statusMessage }: TypingIndicatorProps) => {
         {/* Change the bubble corner based on the text direction. */}
         <div className={`hc-bot-bubble bg-card rounded-2xl px-4 py-3 shadow-[0_1px_6px_-1px_hsl(var(--primary)/0.08)] border border-border/60 ${isRTL ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
           <div className="flex items-center gap-2" aria-hidden="true">
-            {statusMessage && (
-              <span className="text-sm text-muted-foreground leading-none" dir="auto">
-                {statusMessage}
+            {displayed && (
+              <span
+                className="text-sm font-semibold leading-none transition-opacity duration-150"
+                style={{ color: '#0A8FB8', opacity: visible ? 1 : 0 }}
+                dir="auto"
+              >
+                {displayed}
               </span>
             )}
             <div className="flex items-center gap-[5px]">
