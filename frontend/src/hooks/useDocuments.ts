@@ -55,6 +55,26 @@ export function useUploadDocument() {
   });
 }
 
+export function useColleges() {
+  return useQuery<{ college_id: string; college_name: string }[]>({
+    queryKey: ['colleges'],
+    queryFn: async () => {
+      const res = await api.get<{ colleges: { college_id: string; college_name: string }[] }>('/api/admin/colleges');
+      return res.colleges;
+    },
+  });
+}
+
+export function useTopics() {
+  return useQuery<{ topic_id: string; topic_name: string }[]>({
+    queryKey: ['topics'],
+    queryFn: async () => {
+      const res = await api.get<{ topics: { topic_id: string; topic_name: string }[] }>('/api/admin/topics');
+      return res.topics;
+    },
+  });
+}
+
 export function useDeleteDocument() {
   const qc = useQueryClient();
   return useMutation({
