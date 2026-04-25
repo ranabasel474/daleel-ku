@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Lang = 'ar' | 'en';
 
@@ -279,6 +279,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLang] = useState<Lang>('en');
   const t = translations[lang];
   const isRTL = lang === 'ar';
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+  }, [lang, isRTL]);
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t, isRTL }}>

@@ -18,14 +18,15 @@ interface ChatMessageProps {
 }
 
 //Renders a single chat bubble — user messages align right, bot messages align left.
+const isArabicText = (text: string) => /[؀-ۿ]/.test(text);
+
 const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMessageProps) => {
   const isUser = role === 'user';
   const { t, isRTL } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const messageLang = isArabicText(content) ? 'ar' : 'en';
 
-  const ariaLabel = isUser
-    ? `${t.youSaid} ${content}`
-    : `${t.botSays} ${content}`;
+  const ariaLabel = isUser ? t.youSaid : t.botSays;
 
   //Copies the message text to the clipboard and briefly shows a checkmark.
   const handleCopy = async () => {
@@ -38,11 +39,12 @@ const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMe
     <div
       className={`px-4 md:px-6 py-3 md:py-4 animate-fade-in ${isUser ? 'flex justify-end' : 'flex justify-start'}`}
       role="article"
+      lang={messageLang}
       aria-label={ariaLabel}
     >
       {isUser ? (
         <div className={`hc-user-bubble bg-primary rounded-2xl px-4 py-2.5 max-w-[85%] md:max-w-[70%] ${isRTL ? 'rounded-bl-sm' : 'rounded-br-sm'}`}>
-          <p className="text-[15px] md:text-base leading-relaxed whitespace-pre-wrap text-primary-foreground hc-user-text font-medium" dir="auto">
+          <p className="text-[15px] md:text-base leading-relaxed whitespace-pre-wrap text-primary-foreground hc-user-text font-medium" dir="auto" lang={messageLang}>
             {content}
           </p>
           <span className="hidden">{timestamp}</span>
@@ -51,7 +53,7 @@ const ChatMessage = ({ role, content, timestamp, sources, onRegenerate }: ChatMe
         <div className="flex max-w-[85%] md:max-w-[75%]">
           <div className="flex-1">
             <div className={`group hc-bot-bubble bg-card rounded-2xl px-4 py-3 shadow-[0_1px_6px_-1px_hsl(var(--primary)/0.08)] border border-border/60 ${isRTL ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-              <div className="text-[15px] md:text-base leading-relaxed text-bot-text prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:text-bot-text prose-strong:text-bot-text" dir="auto">
+              <div className="text-[15px] md:text-base leading-relaxed text-bot-text prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:text-bot-text prose-strong:text-bot-text" dir="auto" lang={messageLang}>
                 <ReactMarkdown>{content}</ReactMarkdown>
               </div>
               <span className="hidden">{timestamp}</span>

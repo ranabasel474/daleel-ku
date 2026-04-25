@@ -62,22 +62,42 @@ def search_query(
     if not nodes:
         return {"context": "", "source_url": None, "source_name": None}
 
-    # Prefer source metadata from top chunk.
-    top_meta = nodes[0].metadata or {}
-    source_name = top_meta.get("file_name") or top_meta.get("source") or None
-
-    document_id = top_meta.get("db_document_id") or top_meta.get("document_id")
     source_url = None
-    print(f"[retrieval] top chunk metadata keys: {list(top_meta.keys())}")
-    print(f"[retrieval] document_id for lookup: {document_id}")
-    if document_id:
-        try:
-            doc_result = supabase_admin.table("document").select("source_url").eq("document_id", document_id).execute()
-            print(f"[retrieval] document lookup result: {doc_result.data}")
-            if doc_result.data:
-                source_url = doc_result.data[0].get("source_url")
-        except Exception as e:
-            print(f"[retrieval] source_url lookup failed: {e}")
+    source_name = None
+
+    for node in nodes:
+        meta = node.metadata or {}
+        document_id = meta.get("db_document_id") or meta.get("document_id")
+        source_id = meta.get("source_id")
+
+        if document_id:
+            try:
+                doc_result = supabase_admin.table("document").select("source_url, document_type").eq("document_id", document_id).execute()
+                if doc_result.data:
+                    doc_type = doc_result.data[0].get("document_type") or ""
+                    if doc_type in ("instagram", "x") and source_id:
+                        src_result = supabase_admin.table("source").select("url, source_name").eq("source_id", source_id).execute()
+                        if src_result.data:
+                            source_url = src_result.data[0].get("url")
+                            source_name = src_result.data[0].get("source_name") or source_url
+                    else:
+                        source_url = doc_result.data[0].get("source_url")
+                        source_name = meta.get("file_name") or meta.get("source") or source_url
+            except Exception:
+                pass
+
+        if not source_url and source_id:
+            try:
+                src_result = supabase_admin.table("source").select("url, source_name").eq("source_id", source_id).execute()
+                if src_result.data:
+                    source_url = src_result.data[0].get("url")
+                    source_name = src_result.data[0].get("source_name") or source_url
+            except Exception:
+                pass
+
+        if source_url:
+            break
+
     print(f"[retrieval] source_url={source_url} source_name={source_name}")
 
     return {

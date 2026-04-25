@@ -9,6 +9,7 @@ from rag.response import generate_response, handle_gpa_query
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.llms import ChatMessage
 from pylatexenc.latex2text import LatexNodes2Text
+from utils.sanitize import sanitize_text
 
 #OpenAI client used only to classify the query type
 _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
@@ -33,34 +34,42 @@ def format_gpa_response(answer, query_text):
     disclaimer = GPA_DISCLAIMER_AR if is_arabic else GPA_DISCLAIMER_EN
     return f"{answer}\n\n{disclaimer}"
 
-# Validates the student query before processing
+# Validates and sanitizes the student query before processing
 def validate_query(text):
     # Reject empty input
     if not text or not text.strip():
-        return False, "Query can't be empty."
-    
-    # Reject long input quries 
+        return False, None, "Query can't be empty."
+
+    # Sanitize: strip null bytes, control chars, normalize Unicode
+    text = sanitize_text(text)
+
+    if not text:
+        return False, None, "Query can't be empty."
+
+    # Reject long input quries
     if len(text) > MAX_QUERY_LENGTH:
-        return False, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
-    
-    return True, None
+        return False, None, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
+
+    return True, text, None
 
 
 # Classifies the query as 'gpa' or 'general'
 def detect_query_type(text):
     classification_prompt = (
-        "You are a query classifier for a Kuwait University academic chatbot"
+        "You are a query classifier for a Kuwait University academic chatbot. "
         "Classify the following student query into exactly one of two categories:\n"
         "- gpa       : the student is asking to calculate or estimate their GPA\n"
         "- general   : the student is asking any other academic question\n\n"
-        "Reply with one word only: gpa or general. Do not explain.\n\n"
-        f"Query: {text}"
+        "Reply with one word only: gpa or general. Do not explain."
     )
 
     try:
         result = _openai_client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": classification_prompt}],
+            messages=[
+                {"role": "system", "content": classification_prompt},
+                {"role": "user", "content": text},
+            ],
             max_tokens=5,
             temperature=0,
         )
@@ -132,8 +141,8 @@ def query():
     query_text = data.get("message", "") if data else ""
     session_id = data.get("session_id") if data else None
 
-    # 1) validate query
-    is_valid, error_message = validate_query(query_text)
+    # 1) validate and sanitize query
+    is_valid, query_text, error_message = validate_query(query_text)
     if not is_valid:
         return jsonify({"error": error_message}), 400
 
@@ -152,8 +161,8 @@ def query_classify():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
 
-    # 1) Validate query
-    is_valid, error_message = validate_query(query_text)
+    # 1) Validate and sanitize query
+    is_valid, query_text, error_message = validate_query(query_text)
     if not is_valid:
         return jsonify({"error": error_message}), 400
 
@@ -172,8 +181,8 @@ def query_complete():
     session_id = data.get("session_id") if data else None
     query_type = data.get("query_type", "general")
 
-    # 1) Validate query
-    is_valid, error_message = validate_query(query_text)
+    # 1) Validate and sanitize query
+    is_valid, query_text, error_message = validate_query(query_text)
     if not is_valid:
         return jsonify({"error": error_message}), 400
 

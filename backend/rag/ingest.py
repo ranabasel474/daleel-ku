@@ -107,7 +107,8 @@ def _classify_source(first_page_text: str, colleges: list[dict]) -> int:
     snippet = first_page_text[:3000]
     prompt = (
         "You are a classifier for Kuwait University.\n"
-        "Based on the following web page excerpt, identify which KU college this website belongs to.\n\n"
+        "Based on the following web page excerpt, identify which KU college this website belongs to.\n"
+        "If the content is university-wide or does not belong to a specific college, use college_id 0.\n\n"
         f"## Colleges (use the integer college_id):\n{college_list}\n\n"
         "Reply with JSON only, no extra text, no markdown, no code fences.\n"
         "Use this exact schema:\n"

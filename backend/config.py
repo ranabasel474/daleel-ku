@@ -61,10 +61,9 @@ FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
 if not FIRECRAWL_API_KEY:
     raise ValueError("FIRECRAWL_API_KEY environment variable is not set")
 
-#For future ingestion integration - when Apify API key is available
-# APIFY_API_KEY = os.getenv("APIFY_API_KEY")
-# if not APIFY_API_KEY:
-#     raise ValueError("APIFY_API_KEY environment variable is not set")
+APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+if not APIFY_API_KEY:
+    raise ValueError("APIFY_API_KEY environment variable is not set")
 
 # Postgres connection for pgvector (direct connection, not pooler)
 SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")

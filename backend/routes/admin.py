@@ -3,6 +3,7 @@ import tempfile
 from flask import Blueprint, request, jsonify
 from config import supabase, supabase_admin
 from auth.jwt import require_auth
+from utils.sanitize import sanitize_text
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -10,7 +11,7 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
-    email = data.get("email", "").strip()
+    email = sanitize_text(data.get("email", ""))
     password = data.get("password", "")
 
     if not email or not password:
@@ -135,7 +136,7 @@ def upload_document():
     if not file or not file.filename.lower().endswith(".pdf"):
         return jsonify({"error": "A PDF file is required"}), 400
 
-    title = request.form.get("title", "").strip()
+    title = sanitize_text(request.form.get("title", ""))
     if not title:
         title = file.filename
 
