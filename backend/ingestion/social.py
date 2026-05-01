@@ -145,6 +145,26 @@ def _fetch_instagram_bio(handle: str) -> str:
     return ""
 
 
+def _fetch_x_bio(handle: str) -> str:
+    """Fetch the bio/description of an X/Twitter profile using Apify."""
+    client = ApifyClient(APIFY_API_KEY)
+    run_input = {
+        "handles": [handle],
+        "tweetsDesired": 1,
+        "addUserInfo": True,
+    }
+    print(f"[social] Fetching bio for X @{handle}...")
+    try:
+        run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)
+        items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+        if items:
+            user_info = items[0].get("author", {})
+            return user_info.get("description") or user_info.get("bio") or ""
+    except Exception as exc:
+        print(f"[social] Failed to fetch bio for X @{handle}: {exc}")
+    return ""
+
+
 # Extracts text from a post (caption + OCR on all images), classifies, and ingests into pgvector
 def _handle_post(
     post: dict,
@@ -280,7 +300,7 @@ def scrape_pending_social() -> None:
             if platform == "instagram":
                 bio_text = _fetch_instagram_bio(handle)
             else:
-                bio_text = ""
+                bio_text = _fetch_x_bio(handle)
             if bio_text.strip():
                 colleges = fetch_colleges()
                 college_id = classify_source(bio_text, colleges)
