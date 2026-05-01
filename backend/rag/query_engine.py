@@ -62,16 +62,17 @@ def search_query(
         print(f"  [{i}] score={n.score:.3f} page={page} | {n.get_content()[:200]}")
 
     if not nodes:
-        return {"context": "", "source_url": None, "source_name": None}
+        return {"context": "", "sources": []}
 
-    source_url = None
-    source_name = None
+    sources = []
+    seen_urls: set[str] = set()
 
-    # Walk nodes in relevance order to find the first attributable source URL
     for node in nodes:
         meta = node.metadata or {}
         document_id = meta.get("db_document_id") or meta.get("document_id")
         source_id = meta.get("source_id")
+        url = None
+        name = None
 
         if document_id:
             try:
@@ -81,30 +82,30 @@ def search_query(
                     if doc_type in ("instagram", "x") and source_id:
                         src_result = supabase_admin.table("source").select("url, source_name").eq("source_id", source_id).execute()
                         if src_result.data:
-                            source_url = src_result.data[0].get("url")
-                            source_name = src_result.data[0].get("source_name") or source_url
+                            url = src_result.data[0].get("url")
+                            name = src_result.data[0].get("source_name") or url
                     else:
-                        source_url = doc_result.data[0].get("source_url")
-                        source_name = meta.get("file_name") or meta.get("source") or source_url
+                        url = doc_result.data[0].get("source_url")
+                        name = meta.get("file_name") or meta.get("source") or url
             except Exception:
                 pass
 
-        if not source_url and source_id:
+        if not url and source_id:
             try:
                 src_result = supabase_admin.table("source").select("url, source_name").eq("source_id", source_id).execute()
                 if src_result.data:
-                    source_url = src_result.data[0].get("url")
-                    source_name = src_result.data[0].get("source_name") or source_url
+                    url = src_result.data[0].get("url")
+                    name = src_result.data[0].get("source_name") or url
             except Exception:
                 pass
 
-        if source_url:
-            break
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            sources.append({"title": name, "url": url})
 
-    print(f"[retrieval] source_url={source_url} source_name={source_name}")
+    print(f"[retrieval] sources={sources}")
 
     return {
         "context": _label_nodes(nodes),
-        "source_url": source_url,
-        "source_name": source_name,
+        "sources": sources,
     }

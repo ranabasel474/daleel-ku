@@ -89,13 +89,11 @@ def handle_gpa_query(query: str, memory: ChatMemoryBuffer | None = None) -> dict
 # Builds a grounded answer from retrieved context and returns answer metadata
 def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer | None = None) -> dict:
     context = search_result.get("context", "")
-    source_url = search_result.get("source_url")
-    source_name = search_result.get("source_name")
+    sources = search_result.get("sources", [])
 
-    # No context — return fallback without calling the LLM
     if not context or not context.strip():
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
-        return {"answer": fallback_text, "was_answered": False, "source_url": None, "source_name": None}
+        return {"answer": fallback_text, "was_answered": False, "sources": []}
 
     user_content = (
         f"Context:\n{context}\n\n"
@@ -120,4 +118,4 @@ def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer 
         answer = raw
         was_answered = False
 
-    return {"answer": answer, "was_answered": was_answered, "source_url": source_url, "source_name": source_name}
+    return {"answer": answer, "was_answered": was_answered, "sources": sources}

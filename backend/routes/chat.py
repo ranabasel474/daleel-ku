@@ -106,8 +106,7 @@ def _process_and_respond(query_text, session_id, query_type):
 
     response_text = result["answer"]
     was_answered = result["was_answered"]
-    source_url = result.get("source_url")
-    source_name = result.get("source_name")
+    sources = result.get("sources", [])
 
     # Logging failure must not block the student from receiving their response
     try:
@@ -132,8 +131,7 @@ def _process_and_respond(query_text, session_id, query_type):
     return jsonify({
         "response": response_text,
         "was_answered": was_answered,
-        "source_url": source_url,
-        "source_name": source_name,
+        "sources": sources,
     }), 200
 
 

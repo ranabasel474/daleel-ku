@@ -155,8 +155,8 @@ const Index = () => {
       });
       const data = await res.json();
       const regenSources =
-        data.was_answered && data.source_url
-          ? [{ title: data.source_name || data.source_url, url: data.source_url }]
+        data.was_answered && data.sources && data.sources.length > 0
+          ? data.sources
           : undefined;
       setMessages(prev => [...prev, { id: Date.now(), role: 'bot', content: data.response, timestamp: ts, sources: regenSources }]);
     } catch {
@@ -230,8 +230,8 @@ const Index = () => {
       const data = await completeRes.json();
 
       const sources =
-        data.was_answered && data.source_url
-          ? [{ title: data.source_name || data.source_url, url: data.source_url }]
+        data.was_answered && data.sources && data.sources.length > 0
+          ? data.sources
           : undefined;
 
       const botMsg: Message = {
