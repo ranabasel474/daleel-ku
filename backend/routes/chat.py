@@ -18,7 +18,7 @@ index = build_index()
 
 session_memories: dict[str, ChatMemoryBuffer] = {}
 
-chat_bp = Blueprint("chat", __name__)  # Chat API routes
+chat_bp = Blueprint("chat", __name__)
 
 MAX_QUERY_LENGTH = 1000
 
@@ -41,17 +41,24 @@ def validate_query(text):
     if not text or not text.strip():
         return False, None, "Query can't be empty."
 
-    # Sanitize: strip null bytes, control chars, normalize Unicode
     text = sanitize_text(text)
 
     if not text:
         return False, None, "Query can't be empty."
 
-    # Reject long input quries
     if len(text) > MAX_QUERY_LENGTH:
         return False, None, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
 
     return True, text, None
+
+
+# Parses and validates the query text from a request payload; returns (query_text, error_response)
+def _parse_and_validate(data) -> tuple[str | None, tuple | None]:
+    query_text = data.get("message", "") if data else ""
+    is_valid, query_text, error_message = validate_query(query_text)
+    if not is_valid:
+        return None, (jsonify({"error": error_message}), 400)
+    return query_text, None
 
 
 # Classifies the query as 'gpa' or 'general' using GPT-4o; defaults to 'general' on failure
@@ -90,7 +97,6 @@ def _process_and_respond(query_text, session_id, query_type):
             session_memories[session_id] = ChatMemoryBuffer.from_defaults(token_limit=3000)
         memory = session_memories[session_id]
 
-    # Process query based on its type
     if query_type == "gpa":
         result = handle_gpa_query(query_text, memory=memory)
         result["answer"] = format_gpa_response(result["answer"], query_text)
@@ -98,7 +104,6 @@ def _process_and_respond(query_text, session_id, query_type):
         search_result = search_query(index, query_text)
         result = generate_response(search_result, query_text, memory=memory)
 
-    # Log the query and response to Supabase
     response_text = result["answer"]
     was_answered = result["was_answered"]
     source_url = result.get("source_url")
@@ -134,59 +139,45 @@ def _process_and_respond(query_text, session_id, query_type):
 
 # Validates, classifies, and responds to a student query in one round trip
 @chat_bp.route("/query", methods=["POST"])
-@limiter.limit("30 per minute")  # per-IP rate limit
+@limiter.limit("30 per minute")
 def query():
-    data = request.get_json()
-    query_text = data.get("message", "") if data else ""
-    session_id = data.get("session_id") if data else None
-
-    # 1) validate and sanitize query
-    is_valid, query_text, error_message = validate_query(query_text)
-    if not is_valid:
-        return jsonify({"error": error_message}), 400
-
+    # 1) Validate and sanitize
+    query_text, err = _parse_and_validate(request.get_json())
+    if err:
+        return err
+    session_id = (request.get_json() or {}).get("session_id")
     # 2) Classify query type
     query_type = detect_query_type(query_text)
-
     # 3) Process and return
     return _process_and_respond(query_text, session_id, query_type)
 
 
 # Validates and classifies the query without running the RAG pipeline or generating a response
 @chat_bp.route("/query/classify", methods=["POST"])
-@limiter.limit("30 per minute")  # per-IP rate limit
+@limiter.limit("30 per minute")
 def query_classify():
-    data = request.get_json()
-    query_text = data.get("message", "") if data else ""
-
-    # 1) Validate and sanitize query
-    is_valid, query_text, error_message = validate_query(query_text)
-    if not is_valid:
-        return jsonify({"error": error_message}), 400
-
-    # 2) Classify and return immediately
-    query_type = detect_query_type(query_text)
-    return jsonify({"query_type": query_type}), 200
+    # 1) Validate and sanitize
+    query_text, err = _parse_and_validate(request.get_json())
+    if err:
+        return err
+    # 2) Classify and return
+    return jsonify({"query_type": detect_query_type(query_text)}), 200
 
 
 # Accepts a pre-classified query_type and runs the RAG or GPA handler directly
 @chat_bp.route("/query/complete", methods=["POST"])
-@limiter.limit("30 per minute")  # per-IP rate limit
+@limiter.limit("30 per minute")
 def query_complete():
     data = request.get_json()
-    query_text = data.get("message", "") if data else ""
-    session_id = data.get("session_id") if data else None
-    query_type = data.get("query_type", "general")
-
-    is_valid, query_text, error_message = validate_query(query_text)
-    if not is_valid:
-        return jsonify({"error": error_message}), 400
-
-    # 2) Guard against unexpected query_type values
-    # Guard against unexpected query_type values from the client
+    # 1) Validate and sanitize
+    query_text, err = _parse_and_validate(data)
+    if err:
+        return err
+    session_id = (data or {}).get("session_id")
+    query_type = (data or {}).get("query_type", "general")
+    # 2) Guard against unexpected query_type values from the client
     if query_type not in ("gpa", "general"):
         return jsonify({"error": "query_type must be 'gpa' or 'general'."}), 400
-
     # 3) Process and return
     return _process_and_respond(query_text, session_id, query_type)
 
@@ -198,7 +189,6 @@ def create_session():
         result = supabase_admin.table("session").insert({
             "started_at": datetime.now(timezone.utc).isoformat()
         }).execute()
-
         session_id = result.data[0]["session_id"]
         return jsonify({"session_id": session_id}), 201
 
@@ -207,7 +197,6 @@ def create_session():
         return jsonify({"error": "Could not create a new session."}), 500
 
 
-# 6) Ends a session by setting ended_at
 # Sets ended_at on the session row and clears the in-memory conversation buffer
 @chat_bp.route("/session/<session_id>", methods=["PATCH"])
 def end_session(session_id):
