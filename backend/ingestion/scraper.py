@@ -1,18 +1,3 @@
-"""
-Web scraper for the Daleel KU ingestion pipeline.
-
-Reads pending URLs from the `source` table, crawls each domain with Firecrawl,
-ingests web-page markdown and any discovered PDFs into pgvector.
-
-Prerequisites — the `source` table must have these columns (not in the original schema):
-    ALTER TABLE source ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
-    ALTER TABLE source ADD COLUMN IF NOT EXISTS last_scraped TIMESTAMP;
-    ALTER TABLE source ADD COLUMN IF NOT EXISTS college_id INTEGER;
-
-The `document` table must have a UNIQUE constraint on source_url:
-    ALTER TABLE document ADD CONSTRAINT document_source_url_key UNIQUE (source_url);
-"""
-
 import os
 import re
 import sys
@@ -23,26 +8,18 @@ from urllib.parse import urlparse, unquote
 
 import requests
 from firecrawl import V1FirecrawlApp as FirecrawlApp, V1ScrapeOptions
-from llama_index.core import VectorStoreIndex, StorageContext, Document
 
 # Ensure backend/ is importable regardless of cwd
 _BACKEND_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
 
-from config import supabase_admin, FIRECRAWL_API_KEY, vector_store  # noqa: E402
+from config import supabase_admin, FIRECRAWL_API_KEY  # noqa: E402
 from ingestion.map_domain import get_url_count  # noqa: E402
-from rag.ingest import (  # noqa: E402
-    ingest_document,
-    _classify_source,
-    _classify_document,
-    _clean_arabic,
-    _SPLITTER,
-    _UUID_METADATA_KEYS,
-    _fetch_colleges,
-    _fetch_topics,
-    _fetch_majors,
-)
+from ingestion.document_store import document_already_ingested, upsert_document  # noqa: E402
+from rag.ingest import ingest_document  # noqa: E402
+from rag.classify import classify_source, classify_document, fetch_colleges, fetch_topics, fetch_majors  # noqa: E402
+from rag.store import chunk_and_store  # noqa: E402
 
 _PDF_URL_RE = re.compile(r"https?://\S+\.pdf(\?\S*)?$", re.IGNORECASE)
 
@@ -53,10 +30,12 @@ _BLOCKED_DOMAINS: set[str] = {"kuwebstaging.ku.edu.kw"}
 # Helpers
 # ---------------------------------------------------------------------------
 
+# Returns True if the URL points directly to a PDF file
 def _is_pdf_url(url: str) -> bool:
     return bool(_PDF_URL_RE.match(url.strip()))
 
 
+# Returns True if the URL's hostname is on the blocked list
 def _is_blocked_domain(url: str) -> bool:
     try:
         hostname = urlparse(url).hostname or ""
@@ -65,15 +44,8 @@ def _is_blocked_domain(url: str) -> bool:
         return False
 
 
+# Returns the crawl limit to use for this source, computing and caching it from map_url if needed
 def _resolve_crawl_limit(source: dict, fc: FirecrawlApp) -> int:
-    """Return the crawl limit to use for this source.
-
-    - crawl_limit already set → reuse it (no map_url call)
-    - crawl_depth = 'page'   → always 1
-    - crawl_depth = 'half'   → map domain, take half
-    - crawl_depth = 'full'   → map domain, take all
-    - fallback               → 20
-    """
     if source.get("crawl_limit"):
         return source["crawl_limit"]
 
@@ -93,7 +65,7 @@ def _resolve_crawl_limit(source: dict, fc: FirecrawlApp) -> int:
     limit = max(1, total // 2) if depth == "half" else total
     print(f"[scraper] Domain has {total} URLs → crawl_limit={limit}")
 
-    # Cache the computed limit on the source row so map_url only runs once
+    # Cache the computed limit so map_url only runs once per source
     supabase_admin.table("source").update({"crawl_limit": limit}).eq(
         "source_id", source["source_id"]
     ).execute()
@@ -101,77 +73,11 @@ def _resolve_crawl_limit(source: dict, fc: FirecrawlApp) -> int:
     return limit
 
 
-def _document_already_ingested(source_url: str) -> bool:
-    result = (
-        supabase_admin.table("document")
-        .select("document_id")
-        .eq("source_url", source_url)
-        .execute()
-    )
-    return bool(result.data)
-
-
-def _upsert_document(
-    title: str,
-    document_type: str,
-    source_url: str,
-    source_id: str,
-    major_id: int = None,
-    admin_id=None,
-) -> str:
-    """Insert or update a document row and return its document_id."""
-    row = {
-        "title": title,
-        "document_type": document_type,
-        "source_url": source_url,
-        "source_id": source_id,
-        "major_id": major_id,
-        "date_added": datetime.now(timezone.utc).isoformat(),
-        "admin_id": admin_id,
-    }
-    result = (
-        supabase_admin.table("document")
-        .upsert(row, on_conflict="source_url")
-        .execute()
-    )
-    return result.data[0]["document_id"]
-
-
-def _ingest_web_markdown(
-    document_id: str,
-    source_id: str,
-    markdown: str,
-    title: str,
-    classification: dict,
-) -> int:
-    """Chunk and persist a web page's markdown to pgvector using a pre-computed classification. Returns chunk count."""
-    college_id = classification["college_id"]
-    major_id   = classification["major_id"]
-    topic_id   = classification["topic_id"]
-
-    doc   = Document(text=markdown, metadata={"title": title})
-    nodes = _SPLITTER.get_nodes_from_documents([doc])
-    for node in nodes:
-        node.set_content(_clean_arabic(node.get_content()))
-        node.metadata["college_id"]     = college_id
-        node.metadata["major_id"]       = major_id
-        node.metadata["topic_id"]       = topic_id
-        node.metadata["source_id"]      = source_id
-        node.metadata["db_document_id"] = document_id
-        node.metadata["document_id"]    = document_id
-        node.metadata["file_name"]      = title
-        node.excluded_llm_metadata_keys = _UUID_METADATA_KEYS + ["db_document_id"]
-
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    VectorStoreIndex(nodes, storage_context=storage_context)
-    print(f"[scraper] Ingested {len(nodes)} chunks for web page '{title}'")
-    return len(nodes)
-
-
 # ---------------------------------------------------------------------------
 # Per-item handlers
 # ---------------------------------------------------------------------------
 
+# Classifies, upserts, and ingests a single web page's markdown into pgvector
 def _handle_web_page(
     page_url: str,
     markdown: str,
@@ -183,45 +89,46 @@ def _handle_web_page(
         print(f"[scraper] Empty markdown for {page_url} — skipping.")
         return
 
-    if _document_already_ingested(page_url):
+    if document_already_ingested(page_url):
         print(f"[scraper] Already ingested, skipping: {page_url}")
         return
 
     print(f"[scraper] Ingesting web page: {page_url}")
     try:
+        colleges = fetch_colleges()
+        topics   = fetch_topics()
+        majors   = fetch_majors()
         # Classify once — result shared between document row and chunk metadata
-        colleges = _fetch_colleges()
-        topics   = _fetch_topics()
-        majors   = _fetch_majors()
-        classification = _classify_document(
-            markdown, colleges, topics, majors, forced_college_id=college_id
-        )
+        classification = classify_document(markdown, colleges, topics, majors, forced_college_id=college_id)
 
-        document_id = _upsert_document(
+        document_id = upsert_document(
             title=title or page_url,
             document_type="web",
             source_url=page_url,
             source_id=source_id,
             major_id=classification["major_id"],
         )
-        _ingest_web_markdown(
+        count = chunk_and_store(
+            text=markdown,
             document_id=document_id,
             source_id=source_id,
-            markdown=markdown,
-            title=title or page_url,
-            classification=classification,
+            college_id=classification["college_id"],
+            major_id=classification["major_id"],
+            topic_id=classification["topic_id"],
+            file_name=title or page_url,
         )
+        print(f"[scraper] Ingested {count} chunks for web page '{title}'")
     except Exception as exc:
         print(f"[scraper] Failed to ingest page {page_url}: {exc}")
 
 
+# Downloads a PDF, uploads to Supabase Storage, parses with LlamaParse, and ingests into pgvector
 def _handle_pdf(
     pdf_url: str,
     source_id: str,
     college_id: int = None,
 ) -> None:
-    """Download a PDF, upload to Supabase Storage, parse with LlamaParse, ingest."""
-    if _document_already_ingested(pdf_url):
+    if document_already_ingested(pdf_url):
         print(f"[scraper] Already ingested, skipping PDF: {pdf_url}")
         return
 
@@ -250,7 +157,7 @@ def _handle_pdf(
         storage_url = supabase_admin.storage.from_("uploads").get_public_url(storage_key)
         print(f"[scraper] Uploaded to storage: {storage_url}")
 
-        document_id = _upsert_document(
+        document_id = upsert_document(
             title=filename,
             document_type="pdf",
             source_url=pdf_url,
@@ -285,8 +192,8 @@ def _handle_pdf(
 # Public entry point
 # ---------------------------------------------------------------------------
 
+# Fetches all sources with status='pending' and crawls each one
 def scrape_pending_sources() -> None:
-    """Fetch all sources with status='pending' and scrape each one."""
     result = supabase_admin.table("source").select("*").eq("status", "pending").execute()
     sources = result.data or []
 
@@ -300,7 +207,7 @@ def scrape_pending_sources() -> None:
     for source in sources:
         source_id  = source["source_id"]
         url        = source.get("url")
-        college_id = source.get("college_id")  # None if not yet classified
+        college_id = source.get("college_id")
 
         if not url:
             print(f"[scraper] Source {source_id} has no URL — skipping.")
@@ -333,11 +240,11 @@ def scrape_pending_sources() -> None:
             ).execute()
             continue
 
-        # Auto-classify college once from first page if not already set on source
+        # Auto-classify college from first page if not already set on source row
         if college_id is None:
             first_page_text = pages[0].markdown or ""
-            colleges = _fetch_colleges()
-            college_id = _classify_source(first_page_text, colleges)
+            colleges = fetch_colleges()
+            college_id = classify_source(first_page_text, colleges)
             supabase_admin.table("source").update({"college_id": college_id}).eq(
                 "source_id", source_id
             ).execute()
@@ -351,7 +258,7 @@ def scrape_pending_sources() -> None:
             title    = meta.get("title") or page_url
             markdown = page.markdown or ""
 
-            # Collect PDF links found on this page — skip blocked domains
+            # Collect PDF links found on this page, skipping blocked domains
             for link in (page.links or []):
                 if _is_pdf_url(link) and not _is_blocked_domain(link):
                     discovered_pdf_urls.add(link)

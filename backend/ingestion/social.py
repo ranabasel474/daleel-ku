@@ -1,16 +1,3 @@
-"""
-Social media scraper for the Daleel KU ingestion pipeline.
-
-Reads pending Instagram and X (Twitter) sources from the `source` table,
-fetches recent posts via Apify, extracts captions/tweets and OCRs images
-with GPT-4o Vision, then ingests everything into pgvector.
-
-Prerequisites — the `source` table must have:
-    - source_type column (enum: 'web', 'instagram', 'x')
-    - status column (default 'pending')
-    - college_id column (nullable integer)
-"""
-
 import os
 import sys
 import base64
@@ -25,17 +12,9 @@ if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
 
 from config import supabase_admin, APIFY_API_KEY, OPENAI_API_KEY  # noqa: E402
-from rag.ingest import (  # noqa: E402
-    _classify_document,
-    _classify_source,
-    _clean_arabic,
-    _SPLITTER,
-    _UUID_METADATA_KEYS,
-    _fetch_colleges,
-    _fetch_topics,
-    _fetch_majors,
-)
-from ingestion.scraper import _upsert_document, _ingest_web_markdown, _document_already_ingested  # noqa: E402
+from ingestion.document_store import document_already_ingested, upsert_document  # noqa: E402
+from rag.classify import classify_source, classify_document, fetch_colleges, fetch_topics, fetch_majors  # noqa: E402
+from rag.store import chunk_and_store  # noqa: E402
 
 POSTS_PER_ACCOUNT = 20
 
@@ -43,6 +22,7 @@ _INSTAGRAM_HANDLE_RE = re.compile(r"instagram\.com/([^/?#]+)")
 _X_HANDLE_RE = re.compile(r"(?:twitter\.com|x\.com)/([^/?#]+)")
 
 
+# Extracts the Instagram account handle from a profile URL; returns None for non-profile paths
 def _extract_instagram_handle(url: str) -> str | None:
     match = _INSTAGRAM_HANDLE_RE.search(url)
     if match:
@@ -52,6 +32,7 @@ def _extract_instagram_handle(url: str) -> str | None:
     return None
 
 
+# Extracts the X/Twitter account handle from a profile URL; returns None for non-profile paths
 def _extract_x_handle(url: str) -> str | None:
     match = _X_HANDLE_RE.search(url)
     if match:
@@ -61,6 +42,7 @@ def _extract_x_handle(url: str) -> str | None:
     return None
 
 
+# Downloads an image from a URL and returns its base64-encoded content; image bytes are not stored
 def _image_to_base64(image_url: str) -> str | None:
     try:
         resp = requests.get(image_url, timeout=30)
@@ -71,8 +53,8 @@ def _image_to_base64(image_url: str) -> str | None:
         return None
 
 
+# Sends a base64-encoded image to GPT-4o Vision and returns extracted text (Arabic or English)
 def _ocr_image(image_base64: str) -> str:
-    """Extract text from an image using GPT-4o Vision. Returns extracted text or empty string."""
     from openai import OpenAI as OpenAIClient
     client = OpenAIClient(api_key=OPENAI_API_KEY)
 
@@ -105,17 +87,15 @@ def _ocr_image(image_base64: str) -> str:
         return ""
 
 
+# Fetches recent posts from an Instagram profile via the Apify Instagram scraper actor
 def _scrape_instagram(handle: str) -> list[dict]:
-    """Fetch recent posts from an Instagram profile using Apify."""
     client = ApifyClient(APIFY_API_KEY)
-
     run_input = {
         "directUrls": [f"https://www.instagram.com/{handle}/"],
         "resultsType": "posts",
         "resultsLimit": POSTS_PER_ACCOUNT,
         "addParentData": False,
     }
-
     print(f"[social] Scraping @{handle} (limit={POSTS_PER_ACCOUNT})...")
     try:
         run = client.actor("shu8hvrXbJbY3Eb9W").call(run_input=run_input)
@@ -127,16 +107,14 @@ def _scrape_instagram(handle: str) -> list[dict]:
         return []
 
 
+# Fetches recent tweets from an X/Twitter profile via the Apify Twitter scraper actor
 def _scrape_x(handle: str) -> list[dict]:
-    """Fetch recent tweets from an X/Twitter profile using Apify."""
     client = ApifyClient(APIFY_API_KEY)
-
     run_input = {
         "handles": [handle],
         "tweetsDesired": POSTS_PER_ACCOUNT,
         "addUserInfo": False,
     }
-
     print(f"[social] Scraping X @{handle} (limit={POSTS_PER_ACCOUNT})...")
     try:
         run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)
@@ -148,8 +126,8 @@ def _scrape_x(handle: str) -> list[dict]:
         return []
 
 
+# Fetches the bio text of an Instagram profile to use for college auto-classification
 def _fetch_instagram_bio(handle: str) -> str:
-    """Fetch the bio/description of an Instagram profile using Apify."""
     client = ApifyClient(APIFY_API_KEY)
     run_input = {
         "directUrls": [f"https://www.instagram.com/{handle}/"],
@@ -167,6 +145,7 @@ def _fetch_instagram_bio(handle: str) -> str:
     return ""
 
 
+# Extracts text from a post (caption + OCR on all images), classifies, and ingests into pgvector
 def _handle_post(
     post: dict,
     handle: str,
@@ -174,7 +153,6 @@ def _handle_post(
     platform: str = "instagram",
     college_id: int = None,
 ) -> None:
-    """Process a single social media post — text + image OCR."""
     if platform == "x":
         post_url = post.get("url") or f"https://x.com/{handle}/status/{post.get('id', '')}"
         caption = post.get("full_text") or post.get("text") or ""
@@ -189,7 +167,7 @@ def _handle_post(
             image_urls = [post.get("displayUrl")]
         timestamp = post.get("timestamp") or ""
 
-    if _document_already_ingested(post_url):
+    if document_already_ingested(post_url):
         print(f"[social] Already ingested, skipping: {post_url}")
         return
 
@@ -206,7 +184,7 @@ def _handle_post(
                 print(f"[social] OCR extracted {len(text)} chars from image")
     ocr_text = "\n\n".join(ocr_texts)
 
-    # Combine caption and OCR text
+    # Merge caption and OCR text into a single content string
     full_text = ""
     if caption:
         full_text += caption
@@ -220,14 +198,12 @@ def _handle_post(
     title = f"@{handle} — {timestamp[:10]}" if timestamp else f"@{handle} post"
 
     try:
-        colleges = _fetch_colleges()
-        topics = _fetch_topics()
-        majors = _fetch_majors()
-        classification = _classify_document(
-            full_text, colleges, topics, majors, forced_college_id=college_id
-        )
+        colleges = fetch_colleges()
+        topics   = fetch_topics()
+        majors   = fetch_majors()
+        classification = classify_document(full_text, colleges, topics, majors, forced_college_id=college_id)
 
-        document_id = _upsert_document(
+        document_id = upsert_document(
             title=title,
             document_type=platform,
             source_url=post_url,
@@ -235,19 +211,25 @@ def _handle_post(
             major_id=classification["major_id"],
         )
 
-        _ingest_web_markdown(
+        chunk_and_store(
+            text=full_text,
             document_id=document_id,
             source_id=source_id,
-            markdown=full_text,
-            title=title,
-            classification=classification,
+            college_id=classification["college_id"],
+            major_id=classification["major_id"],
+            topic_id=classification["topic_id"],
+            file_name=title,
         )
     except Exception as exc:
         print(f"[social] Failed to ingest post {post_url}: {exc}")
 
 
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+# Fetches all Instagram and X sources with status='pending' and scrapes each one
 def scrape_pending_social() -> None:
-    """Fetch all sources with source_type='instagram' or 'x' and status='pending', then scrape each one."""
     result = (
         supabase_admin.table("source")
         .select("*")
@@ -269,7 +251,6 @@ def scrape_pending_social() -> None:
         college_id = source.get("college_id")
         platform = source.get("source_type", "instagram")
 
-        # Extract handle based on platform
         if platform == "x":
             handle = _extract_x_handle(url)
         else:
@@ -282,7 +263,6 @@ def scrape_pending_social() -> None:
             ).execute()
             continue
 
-        # Scrape posts based on platform
         if platform == "x":
             posts = _scrape_x(handle)
         else:
@@ -295,15 +275,15 @@ def scrape_pending_social() -> None:
             ).execute()
             continue
 
-        # Auto-classify college from account bio if not set
+        # Auto-classify college from account bio if not already set on source row
         if college_id is None:
             if platform == "instagram":
                 bio_text = _fetch_instagram_bio(handle)
             else:
                 bio_text = ""
             if bio_text.strip():
-                colleges = _fetch_colleges()
-                college_id = _classify_source(bio_text, colleges)
+                colleges = fetch_colleges()
+                college_id = classify_source(bio_text, colleges)
                 supabase_admin.table("source").update({"college_id": college_id}).eq(
                     "source_id", source_id
                 ).execute()
