@@ -1,9 +1,4 @@
-"""
-Entry point for the web scraper.
-
-Run from the backend/ directory:
-    python ingestion/scrape_urls.py
-"""
+# Entry point for the web scraper; run from backend/: python ingestion/scrape_urls.py
 
 import os
 import sys

@@ -23,7 +23,7 @@ from rag.store import chunk_and_store  # noqa: E402
 
 _PDF_URL_RE = re.compile(r"https?://\S+\.pdf(\?\S*)?$", re.IGNORECASE)
 
-_BLOCKED_DOMAINS: set[str] = {"kuwebstaging.ku.edu.kw"}
+_BLOCKED_DOMAINS: set[str] = {"kuwebstaging.ku.edu.kw"}  # staging mirror excluded to avoid ingesting duplicate content
 
 
 # ---------------------------------------------------------------------------

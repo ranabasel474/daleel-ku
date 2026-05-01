@@ -3,7 +3,7 @@ from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
 from config import llm
 
-#Fallback replies used when the context does not contain the needed answer
+# Fallback replies used when the context does not contain the needed answer
 FALLBACK_AR = (
     "لم أجد معلومات كافية حول هذا الموضوع في المصادر المتاحة. "
     "يرجى مراجعة الدليل الأكاديمي الرسمي أو التواصل مع الإرشاد الأكاديمي."
@@ -13,7 +13,7 @@ FALLBACK_EN = (
     "Please refer to the official academic guide or contact academic advising."
 )
 
-#System prompt for grounded question answering with strict JSON output
+# System prompt for grounded question answering with strict JSON output
 SYSTEM_PROMPT = (
     "You are Daleel, an academic assistant for Kuwait University students.\n\n"
     "## GROUNDING RULES:\n"
@@ -37,7 +37,7 @@ SYSTEM_PROMPT = (
     '{"was_answered": true/false, "answer": "..."}'
 )
 
-#System prompt for handling GPA calculation questions
+# System prompt for handling GPA calculation questions
 GPA_SYSTEM_PROMPT = (
     "You are a Kuwait University academic assistant chatbot.\n\n"
     "## GPA Calculation Rules\n\n"
@@ -72,7 +72,7 @@ GPA_SYSTEM_PROMPT = (
     "Always reply in the same language as the question."
 )
 
-#Handles GPA questions directly using the KU grade scale prompt
+# Handles GPA questions directly using the KU grade scale prompt
 def handle_gpa_query(query: str, memory: ChatMemoryBuffer | None = None) -> dict:
     history = memory.get() if memory else []
     messages = [
@@ -86,13 +86,13 @@ def handle_gpa_query(query: str, memory: ChatMemoryBuffer | None = None) -> dict
 
     return {"answer": answer, "was_answered": True}
 
-#Builds a grounded answer from retrieved context and returns answer metadata
+# Builds a grounded answer from retrieved context and returns answer metadata
 def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer | None = None) -> dict:
     context = search_result.get("context", "")
     source_url = search_result.get("source_url")
     source_name = search_result.get("source_name")
 
-    #No context => return fallback text
+    # No context — return fallback without calling the LLM
     if not context or not context.strip():
         fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}"
         return {"answer": fallback_text, "was_answered": False, "source_url": None, "source_name": None}
@@ -116,7 +116,7 @@ def generate_response(search_result: dict, query: str, memory: ChatMemoryBuffer 
         answer = parsed.get("answer", "").strip()
         was_answered = bool(parsed.get("was_answered", False))
     except (json.JSONDecodeError, AttributeError):
-        #If model output is not valid JSON, return raw text and mark unanswered
+        # Model output is not valid JSON — treat raw text as unanswered
         answer = raw
         was_answered = False
 

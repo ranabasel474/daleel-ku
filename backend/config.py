@@ -31,8 +31,8 @@ SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 if not SUPABASE_SERVICE_KEY:
     raise ValueError("SUPABASE_SERVICE_KEY environment variable is not set")
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)  # Auth client
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)  # Admin Database client
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)                  # anon key — auth operations only
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)    # service key — bypasses RLS for admin writes
 
 #LlamaIndex model setup
 llm = OpenAI(
@@ -65,7 +65,7 @@ APIFY_API_KEY = os.getenv("APIFY_API_KEY")
 if not APIFY_API_KEY:
     raise ValueError("APIFY_API_KEY environment variable is not set")
 
-# Postgres connection for pgvector (direct connection, not pooler)
+# Direct (non-pooler) connection required — PGVectorStore is incompatible with pgbouncer transaction mode
 SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
 if not SUPABASE_DB_URL:
     raise ValueError("SUPABASE_DB_URL environment variable is not set")

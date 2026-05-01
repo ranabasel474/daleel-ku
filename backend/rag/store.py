@@ -5,8 +5,8 @@ from llama_index.core.node_parser import SentenceSplitter
 
 from config import vector_store
 
-_ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")
-_SUBSCRIPT_DIGITS = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+_ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")  # kashida and diacritics that degrade embedding quality
+_SUBSCRIPT_DIGITS = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")  # LlamaParse sometimes outputs subscript digits in parsed text
 
 # Shared splitter config — all source types use the same chunking parameters
 SPLITTER = SentenceSplitter(chunk_size=768, chunk_overlap=200)
@@ -46,7 +46,7 @@ def chunk_and_store(
         node.metadata["db_document_id"] = document_id
         node.metadata["document_id"]    = document_id
         node.metadata["file_name"]      = file_name
-        node.excluded_llm_metadata_keys = UUID_METADATA_KEYS + ["db_document_id"]
+        node.excluded_llm_metadata_keys = UUID_METADATA_KEYS + ["db_document_id"]  # db_document_id duplicates document_id under a different key
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     VectorStoreIndex(nodes, storage_context=storage_context)
     return len(nodes)

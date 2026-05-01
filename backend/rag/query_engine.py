@@ -3,17 +3,18 @@ from llama_index.core import VectorStoreIndex
 from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterCondition
 from config import supabase_admin
 
-TOP_K = 5  #number of chunks passed to the LLM
-TOP_K = 5
+TOP_K = 5  # number of chunks passed to the LLM
 
 # Arabic normalization pattern.
-_ARABIC_NOISE = re.compile(r"[\u0640\u064b-\u065f\u0610-\u061a]")
+_ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")
 
-# Normalize Arabic text.
+
+# Strips Arabic kashida and diacritic characters to improve retrieval accuracy
 def _clean_arabic(text: str) -> str:
     return _ARABIC_NOISE.sub("", text)
 
-# Label nodes for context
+
+# Formats retrieved nodes as labeled, page-referenced blocks for the LLM prompt
 def _label_nodes(nodes) -> str:
     labeled = []
     for i, node in enumerate(nodes, start=1):
@@ -22,7 +23,8 @@ def _label_nodes(nodes) -> str:
         labeled.append(f"[Chunk {i} | page {page}]\n{node.get_content()}")
     return "\n\n---\n\n".join(labeled)
 
-# Retrieve context for a question
+
+# Retrieves top-K chunks matching the question and resolves a source URL for attribution
 def search_query(
     index: VectorStoreIndex,
     question: str,
@@ -65,6 +67,7 @@ def search_query(
     source_url = None
     source_name = None
 
+    # Walk nodes in relevance order to find the first attributable source URL
     for node in nodes:
         meta = node.metadata or {}
         document_id = meta.get("db_document_id") or meta.get("document_id")

@@ -1,10 +1,4 @@
-"""
-Utility to map all URLs on a domain before committing to a full crawl.
-Use this to decide what crawl_limit to set on a source row.
-
-Run from backend/:
-    python ingestion/map_domain.py https://cls.ku.edu.kw
-"""
+# Utility to map all URLs on a domain before committing to a full crawl; run from backend/: python ingestion/map_domain.py <url>
 
 import os
 import sys
@@ -16,14 +10,15 @@ from config import FIRECRAWL_API_KEY
 from firecrawl import V1FirecrawlApp as FirecrawlApp
 
 
+# Returns the total number of URLs found on a domain via Firecrawl's map endpoint
 def get_url_count(url: str, fc: FirecrawlApp = None) -> int:
-    """Return the total number of URLs found on a domain via map_url."""
     if fc is None:
         fc = FirecrawlApp(api_key=FIRECRAWL_API_KEY)
     result = fc.map_url(url)
     return len(result.links or [])
 
 
+# Maps all URLs on a domain and prints a depth breakdown with suggested crawl limits
 def map_domain(url: str) -> None:
     fc = FirecrawlApp(api_key=FIRECRAWL_API_KEY)
 

@@ -8,10 +8,10 @@ from rag.query_engine import search_query
 from rag.response import generate_response, handle_gpa_query
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.llms import ChatMessage
-from pylatexenc.latex2text import LatexNodes2Text
+from pylatexenc.latex2text import LatexNodes2Text  # converts LaTeX math notation to readable plain text
 from utils.sanitize import sanitize_text
 
-#OpenAI client used only to classify the query type
+# Direct OpenAI client used only for query type classification
 _openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
 
 index = build_index()
@@ -28,15 +28,16 @@ GPA_DISCLAIMER_EN = "This is an estimated GPA for reference only. Please verify 
 _latex_converter = LatexNodes2Text()
 
 
+# Strips LaTeX from the GPA answer and appends the language-appropriate disclaimer
 def format_gpa_response(answer, query_text):
     answer = _latex_converter.latex_to_text(answer)
     is_arabic = any('؀' <= ch <= 'ۿ' for ch in query_text)
     disclaimer = GPA_DISCLAIMER_AR if is_arabic else GPA_DISCLAIMER_EN
     return f"{answer}\n\n{disclaimer}"
 
-# Validates and sanitizes the student query before processing
+
+# Validates and sanitizes the student query; returns (is_valid, cleaned_text, error_message)
 def validate_query(text):
-    # Reject empty input
     if not text or not text.strip():
         return False, None, "Query can't be empty."
 
@@ -53,7 +54,7 @@ def validate_query(text):
     return True, text, None
 
 
-# Classifies the query as 'gpa' or 'general'
+# Classifies the query as 'gpa' or 'general' using GPT-4o; defaults to 'general' on failure
 def detect_query_type(text):
     classification_prompt = (
         "You are a query classifier for a Kuwait University academic chatbot. "
@@ -81,7 +82,7 @@ def detect_query_type(text):
         return "general"
 
 
-# Shared helper — runs GPA or RAG handler and returns a Flask response tuple
+# Dispatches to GPA or RAG handler, logs the result to Supabase, and returns a Flask response tuple
 def _process_and_respond(query_text, session_id, query_type):
     memory = None
     if session_id:
@@ -103,7 +104,7 @@ def _process_and_respond(query_text, session_id, query_type):
     source_url = result.get("source_url")
     source_name = result.get("source_name")
 
-    #Logging failure must not block the student from receiving their response
+    # Logging failure must not block the student from receiving their response
     try:
         log_entry = {
             "query_text": query_text,
@@ -123,7 +124,6 @@ def _process_and_respond(query_text, session_id, query_type):
         memory.put(ChatMessage(role="user", content=query_text))
         memory.put(ChatMessage(role="assistant", content=response_text))
 
-    # Return the response to the student
     return jsonify({
         "response": response_text,
         "was_answered": was_answered,
@@ -132,10 +132,9 @@ def _process_and_respond(query_text, session_id, query_type):
     }), 200
 
 
-@chat_bp.route("/query", methods=["POST"])  # Query endpoint
-@limiter.limit("30 per minute")  # Per-IP rate limit
-
-# Main query handler — kept unchanged for backward compatibility with test.py
+# Validates, classifies, and responds to a student query in one round trip
+@chat_bp.route("/query", methods=["POST"])
+@limiter.limit("30 per minute")  # per-IP rate limit
 def query():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
@@ -153,10 +152,9 @@ def query():
     return _process_and_respond(query_text, session_id, query_type)
 
 
-@chat_bp.route("/query/classify", methods=["POST"])  # Classify-only endpoint
-@limiter.limit("30 per minute")  # Per-IP rate limit
-
-# Step 1 of the split flow — validates and classifies only, no RAG or response generation
+# Validates and classifies the query without running the RAG pipeline or generating a response
+@chat_bp.route("/query/classify", methods=["POST"])
+@limiter.limit("30 per minute")  # per-IP rate limit
 def query_classify():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
@@ -171,22 +169,21 @@ def query_classify():
     return jsonify({"query_type": query_type}), 200
 
 
-@chat_bp.route("/query/complete", methods=["POST"])  # Completion endpoint
-@limiter.limit("30 per minute")  # Per-IP rate limit
-
-# Step 2 of the split flow — skips classification, goes straight to RAG or GPA handler
+# Accepts a pre-classified query_type and runs the RAG or GPA handler directly
+@chat_bp.route("/query/complete", methods=["POST"])
+@limiter.limit("30 per minute")  # per-IP rate limit
 def query_complete():
     data = request.get_json()
     query_text = data.get("message", "") if data else ""
     session_id = data.get("session_id") if data else None
     query_type = data.get("query_type", "general")
 
-    # 1) Validate and sanitize query
     is_valid, query_text, error_message = validate_query(query_text)
     if not is_valid:
         return jsonify({"error": error_message}), 400
 
     # 2) Guard against unexpected query_type values
+    # Guard against unexpected query_type values from the client
     if query_type not in ("gpa", "general"):
         return jsonify({"error": "query_type must be 'gpa' or 'general'."}), 400
 
@@ -194,7 +191,7 @@ def query_complete():
     return _process_and_respond(query_text, session_id, query_type)
 
 
-#Creates a new session row and returns the session_id
+# Creates a new session row in Supabase and returns the session_id
 @chat_bp.route("/session", methods=["POST"])
 def create_session():
     try:
@@ -211,6 +208,7 @@ def create_session():
 
 
 # 6) Ends a session by setting ended_at
+# Sets ended_at on the session row and clears the in-memory conversation buffer
 @chat_bp.route("/session/<session_id>", methods=["PATCH"])
 def end_session(session_id):
     try:
@@ -220,8 +218,7 @@ def end_session(session_id):
 
         session_memories.pop(session_id, None)
         return jsonify({"session_id": session_id}), 200
-    
-    # Raise an error when session_id is invalid or database update fails
+
     except Exception as e:
         print(f"Error ending session {session_id}: {e}")
         return jsonify({"error": "Could not end the session."}), 500

@@ -7,7 +7,7 @@ from utils.sanitize import sanitize_text
 
 admin_bp = Blueprint("admin", __name__)
 
-#Authenticates an admin via Supabase Auth and returns a JWT access token
+# Authenticates an admin via Supabase Auth and returns a JWT access token
 @admin_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
@@ -24,7 +24,7 @@ def login():
     except Exception:
         return jsonify({"error": "Invalid credentials"}), 401
 
-#Returns all documents with college/topic names derived from their chunks in data_chunks
+# Returns all documents enriched with college and topic names resolved from chunk metadata
 @admin_bp.route("/documents", methods=["GET"])
 @require_auth
 def get_documents():
@@ -64,7 +64,7 @@ def get_documents():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Inserts a new document record
+# Inserts a new document record
 @admin_bp.route("/documents", methods=["POST"])
 @require_auth
 def add_document():
@@ -79,7 +79,7 @@ def add_document():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Updates an existing document record by ID
+# Updates an existing document record by ID
 @admin_bp.route("/documents/<doc_id>", methods=["PUT"])
 @require_auth
 def update_document(doc_id):
@@ -93,7 +93,7 @@ def update_document(doc_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Deletes a document, its chunks from data_chunks, and its file from storage
+# Deletes a document, its chunks from data_chunks, and its file from storage
 @admin_bp.route("/documents/<doc_id>", methods=["DELETE"])
 @require_auth
 def delete_document(doc_id):
@@ -119,14 +119,13 @@ def delete_document(doc_id):
             except Exception:
                 pass  # File may already be gone
 
-        # 4. Delete the document row
         supabase_admin.table("document").delete().eq("document_id", doc_id).execute()
 
         return jsonify({"message": "Document deleted", "chunks_deleted": len(chunk_ids)}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Uploads a PDF to Supabase Storage, creates a document record, and runs ingestion
+# Uploads a PDF to Supabase Storage, creates a document record, and runs ingestion
 @admin_bp.route("/documents/upload", methods=["POST"])
 @require_auth
 def upload_document():
@@ -181,7 +180,7 @@ def upload_document():
             os.remove(tmp_path)
 
 
-#Returns all colleges
+# Returns college_id and college_name for all colleges
 @admin_bp.route("/colleges", methods=["GET"])
 @require_auth
 def get_colleges():
@@ -191,7 +190,7 @@ def get_colleges():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Returns all topics
+# Returns topic_id and topic_name for all topics
 @admin_bp.route("/topics", methods=["GET"])
 @require_auth
 def get_topics():
@@ -201,7 +200,7 @@ def get_topics():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#Returns all user_query rows ordered by created_at descending
+# Returns all user_query rows ordered by created_at descending
 @admin_bp.route("/queries", methods=["GET"])
 @require_auth
 def get_queries():

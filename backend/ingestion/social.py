@@ -16,7 +16,7 @@ from ingestion.document_store import document_already_ingested, upsert_document 
 from rag.classify import classify_source, classify_document, fetch_colleges, fetch_topics, fetch_majors  # noqa: E402
 from rag.store import chunk_and_store  # noqa: E402
 
-POSTS_PER_ACCOUNT = 20
+POSTS_PER_ACCOUNT = 20  # limits Apify actor cost per source run
 
 _INSTAGRAM_HANDLE_RE = re.compile(r"instagram\.com/([^/?#]+)")
 _X_HANDLE_RE = re.compile(r"(?:twitter\.com|x\.com)/([^/?#]+)")
@@ -98,7 +98,7 @@ def _scrape_instagram(handle: str) -> list[dict]:
     }
     print(f"[social] Scraping @{handle} (limit={POSTS_PER_ACCOUNT})...")
     try:
-        run = client.actor("shu8hvrXbJbY3Eb9W").call(run_input=run_input)
+        run = client.actor("shu8hvrXbJbY3Eb9W").call(run_input=run_input)  # Apify Instagram Scraper actor
         items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
         print(f"[social] Got {len(items)} posts from @{handle}")
         return items
@@ -117,7 +117,7 @@ def _scrape_x(handle: str) -> list[dict]:
     }
     print(f"[social] Scraping X @{handle} (limit={POSTS_PER_ACCOUNT})...")
     try:
-        run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)
+        run = client.actor("61RPP7dywgiy0JPD0").call(run_input=run_input)  # Apify Twitter/X Scraper actor
         items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
         print(f"[social] Got {len(items)} tweets from @{handle}")
         return items
@@ -136,7 +136,7 @@ def _fetch_instagram_bio(handle: str) -> str:
     }
     print(f"[social] Fetching bio for @{handle}...")
     try:
-        run = client.actor("shu8hvrXbJbY3Eb9W").call(run_input=run_input)
+        run = client.actor("shu8hvrXbJbY3Eb9W").call(run_input=run_input)  # Apify Instagram Scraper actor
         items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
         if items:
             return items[0].get("biography") or ""
