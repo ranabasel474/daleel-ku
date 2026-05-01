@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Shared rate limiter instance — initialized here so routes/chat.py can import it before the app is created
 limiter = Limiter(get_remote_address)
@@ -51,4 +52,21 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        func=lambda: _run_rescrape(app),
+        trigger="interval",
+        weeks=1,
+        id="weekly_social_rescrape",
+    )
+    scheduler.start()
+    print("[scheduler] Weekly social media rescrape scheduled.")
+
     app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true", port=5000)
+
+
+def _run_rescrape(app):
+    with app.app_context():
+        from ingestion.rescrape_social import rescrape_social
+        rescrape_social()
