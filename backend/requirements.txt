@@ -22,6 +22,9 @@ firecrawl-py
 # Social media scraping
 apify-client
 
+# Task scheduling
+APScheduler
+
 # LaTeX to plain text conversion
 pylatexenc
 
