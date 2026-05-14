@@ -37,8 +37,8 @@ const docTypes = ['PDF', 'web', 'instagram', 'text'];
 const emptyForm = { title: '', type: 'PDF', college: '', topic: '', sourceUrl: '' };
 
 const statusBadgeVariant = (status: ApiSource['status']) => {
-  if (status === 'active') return 'default';
-  if (status === 'error') return 'destructive';
+  if (status === 'scraped') return 'default';
+  if (status === 'failed') return 'destructive';
   return 'secondary';
 };
 
