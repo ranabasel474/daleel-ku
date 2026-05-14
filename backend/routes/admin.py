@@ -1,5 +1,6 @@
 import os
 import tempfile
+import threading
 from flask import Blueprint, request, jsonify
 from config import supabase, supabase_admin
 from auth.jwt import require_auth
@@ -29,7 +30,7 @@ def login():
 @require_auth
 def get_documents():
     try:
-        doc_response = supabase_admin.table("document").select("*").execute()
+        doc_response = supabase_admin.table("document").select("*").order("date_added").execute()
         documents = doc_response.data
 
         # Fetch college and topic lookup tables
@@ -88,8 +89,45 @@ def update_document(doc_id):
         return jsonify({"error": "Request body is required"}), 400
 
     try:
-        response = supabase_admin.table("document").update(data).eq("document_id", doc_id).execute()
-        return jsonify({"document": response.data[0]}), 200
+        topic_name = data.pop("topic_name", None)
+        college_name = data.pop("college_name", None)
+
+        if data:
+            supabase_admin.table("document").update(data).eq("document_id", doc_id).execute()
+
+        # Resolve metadata updates for topic and college
+        new_topic_id = None
+        new_college_id = None
+
+        if topic_name is not None:
+            topic_name = " ".join(topic_name.strip().split()[:5])
+            if topic_name:
+                t_result = supabase_admin.table("topic").select("topic_id").eq("topic_name", topic_name).execute()
+                if t_result.data:
+                    new_topic_id = t_result.data[0]["topic_id"]
+                else:
+                    insert_result = supabase_admin.table("topic").insert({"topic_name": topic_name}).execute()
+                    new_topic_id = insert_result.data[0]["topic_id"]
+
+        if college_name is not None:
+            c_result = supabase_admin.table("college").select("college_id").eq("college_name", college_name).execute()
+            if not c_result.data:
+                return jsonify({"error": f"College '{college_name}' not found"}), 400
+            new_college_id = c_result.data[0]["college_id"]
+
+        if new_topic_id is not None or new_college_id is not None:
+            all_chunks = supabase_admin.table("data_chunks").select("id, metadata_").execute().data or []
+            for chunk in all_chunks:
+                meta = chunk.get("metadata_") or {}
+                if meta.get("db_document_id") == doc_id:
+                    if new_topic_id is not None:
+                        meta["topic_id"] = new_topic_id
+                    if new_college_id is not None:
+                        meta["college_id"] = new_college_id
+                    supabase_admin.table("data_chunks").update({"metadata_": meta}).eq("id", chunk["id"]).execute()
+
+        doc_response = supabase_admin.table("document").select("*").eq("document_id", doc_id).execute()
+        return jsonify({"document": doc_response.data[0]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -214,3 +252,74 @@ def get_queries():
         return jsonify({"queries": response.data}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# Returns all source rows
+@admin_bp.route("/sources", methods=["GET"])
+@require_auth
+def get_sources():
+    try:
+        response = supabase_admin.table("source").select("*").order("last_scraped", desc=True).execute()
+        return jsonify({"sources": response.data or []}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Creates a new source row for scraping
+@admin_bp.route("/sources", methods=["POST"])
+@require_auth
+def add_source():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
+    source_name = sanitize_text(data.get("source_name", ""))
+    url = sanitize_text(data.get("url", ""))
+    source_type = data.get("source_type", "web")
+    college_id = data.get("college_id")
+    crawl_depth = data.get("crawl_depth", "page")
+
+    if not source_name:
+        return jsonify({"error": "source_name is required"}), 400
+    if not url:
+        return jsonify({"error": "url is required"}), 400
+    if source_type not in ("web", "instagram"):
+        return jsonify({"error": "source_type must be 'web' or 'instagram'"}), 400
+
+    row = {
+        "source_name": source_name,
+        "url": url,
+        "source_type": source_type,
+        "status": "pending",
+        "crawl_depth": crawl_depth if source_type == "web" else "page",
+    }
+    if college_id is not None:
+        row["college_id"] = college_id
+
+    try:
+        response = supabase_admin.table("source").insert(row).execute()
+        return jsonify({"source": response.data[0]}), 201
+    except Exception as e:
+        error_msg = str(e)
+        if "duplicate" in error_msg.lower() or "unique" in error_msg.lower():
+            return jsonify({"error": "A source with this URL already exists."}), 409
+        return jsonify({"error": error_msg}), 500
+
+
+# Triggers scraping of all pending sources in a background thread
+@admin_bp.route("/scrape", methods=["POST"])
+@require_auth
+def trigger_scrape():
+    def run_scrape():
+        from ingestion.scraper import scrape_pending_sources
+        from ingestion.social import scrape_pending_social
+        try:
+            scrape_pending_sources()
+            scrape_pending_social()
+        except Exception as e:
+            print(f"[scrape] Background scrape error: {e}")
+
+    thread = threading.Thread(target=run_scrape, daemon=True)
+    thread.start()
+
+    return jsonify({"message": "Scraping started in the background."}), 202

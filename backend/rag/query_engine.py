@@ -127,7 +127,7 @@ def search_query(
             except Exception:
                 pass
 
-        if url and url not in seen_urls:
+        if url and not url.startswith("storage://") and url not in seen_urls:
             seen_urls.add(url)
             sources.append({"title": name, "url": url})
 

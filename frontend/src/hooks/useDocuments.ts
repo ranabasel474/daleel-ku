@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { transformDocument } from '@/lib/transformers';
-import type { ApiDocument, Document } from '@/lib/types';
+import type { ApiDocument, ApiSource, Document } from '@/lib/types';
 
 export function useDocuments() {
   return useQuery<Document[]>({
@@ -25,9 +25,12 @@ export function useCreateDocument() {
 export function useUpdateDocument() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { title?: string; source_url?: string; document_type?: string } }) =>
+    mutationFn: ({ id, data }: { id: string; data: Record<string, string> }) =>
       api.put<{ document: ApiDocument }>(`/api/admin/documents/${id}`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['topics'] });
+    },
   });
 }
 
@@ -81,5 +84,25 @@ export function useDeleteDocument() {
     mutationFn: (id: string) =>
       api.del<{ message: string }>(`/api/admin/documents/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),
+  });
+}
+
+export function useCreateSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      source_name: string;
+      url: string;
+      source_type: 'web' | 'instagram';
+      college_id?: number | null;
+      crawl_depth?: 'page' | 'half' | 'full';
+    }) => api.post<{ source: ApiSource }>('/api/admin/sources', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
+
+export function useTriggerScrape() {
+  return useMutation({
+    mutationFn: () => api.post<{ message: string }>('/api/admin/scrape', {}),
   });
 }

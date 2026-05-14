@@ -14,10 +14,6 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable is not set")
 
 
-# JWT settings
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
-
 # Supabase Clients
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 if not SUPABASE_URL:
