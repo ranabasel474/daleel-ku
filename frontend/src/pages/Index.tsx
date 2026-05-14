@@ -38,9 +38,12 @@ const Index = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [screenReader, setScreenReader] = useState(() => localStorage.getItem('screenReader') === 'true');
   const scrollRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const liveRegionRef = useRef<HTMLDivElement>(null);
+  const screenReaderRef = useRef(screenReader);
 
   //Smoothly scrolls the chat container to its latest message.
   const scrollToBottom = useCallback(() => {
@@ -98,6 +101,73 @@ const Index = () => {
     scrollToBottom();
   }, [messages, isTyping, scrollToBottom]);
 
+  // Keep ref in sync and persist to localStorage
+  useEffect(() => {
+    screenReaderRef.current = screenReader;
+    localStorage.setItem('screenReader', String(screenReader));
+    if (!screenReader) window.speechSynthesis?.cancel();
+  }, [screenReader]);
+
+  // Warmup speechSynthesis on mount to prevent first-speech delay
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const loadVoices = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    const warmup = new SpeechSynthesisUtterance('');
+    warmup.volume = 0;
+    window.speechSynthesis.speak(warmup);
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // Speak aria-label / text of focused interactive elements when screen reader is on
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const handleFocus = (e: FocusEvent) => {
+      if (!screenReaderRef.current) return;
+      const el = e.target as HTMLElement;
+      const tag = el.tagName;
+      if (!['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag) && el.getAttribute('role') !== 'switch') return;
+      const label = el.getAttribute('aria-label') || el.textContent?.trim() || '';
+      if (!label) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(label);
+      const isArabic = /[؀-ۿ]/.test(label);
+      utterance.lang = isArabic ? 'ar-SA' : 'en-US';
+      const voice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith(isArabic ? 'ar' : 'en'));
+      if (voice) utterance.voice = voice;
+      window.speechSynthesis.speak(utterance);
+    };
+    document.addEventListener('focus', handleFocus, true);
+    return () => document.removeEventListener('focus', handleFocus, true);
+  }, []);
+
+  // Announce new bot messages via ARIA live region + TTS
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last) return;
+
+    // Clear-then-set to force re-announcement even if text is identical
+    if (last.role === 'bot') {
+      const el = liveRegionRef.current;
+      if (el) {
+        el.textContent = '';
+        requestAnimationFrame(() => { el.textContent = last.content; });
+      }
+    }
+
+    if (!screenReaderRef.current || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(last.content);
+    const isArabic = /[؀-ۿ]/.test(last.content);
+    utterance.lang = isArabic ? 'ar-SA' : 'en-US';
+    const voice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith(isArabic ? 'ar' : 'en'));
+    if (voice) utterance.voice = voice;
+    window.speechSynthesis.speak(utterance);
+  }, [messages]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -118,7 +188,7 @@ const Index = () => {
 
   //Starts a fresh chat by ending the current session and resetting local messages.
   const handleNewChat = async () => {
-    //Close the current session before resetting the UI.
+    window.speechSynthesis?.cancel();
     if (sessionId) {
       try {
         await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session/${sessionId}`, {
@@ -266,7 +336,14 @@ const Index = () => {
           hamburgerRef={hamburgerRef}
           drawerOpen={drawerOpen}
         />
-        <ChatDrawer open={drawerOpen} onClose={handleDrawerClose} onNewChat={handleNewChat} />
+        <ChatDrawer
+          open={drawerOpen}
+          onClose={handleDrawerClose}
+          onNewChat={handleNewChat}
+          screenReaderEnabled={screenReader}
+          onScreenReaderChange={setScreenReader}
+        />
+        <div ref={liveRegionRef} aria-live="polite" aria-atomic="true" className="sr-only" />
 
         <main role="main" className="flex-1 overflow-y-auto relative" ref={scrollRef}>
           <div

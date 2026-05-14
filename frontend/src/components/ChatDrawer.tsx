@@ -7,15 +7,16 @@ interface ChatDrawerProps {
   open: boolean;
   onClose: () => void;
   onNewChat: () => void;
+  screenReaderEnabled: boolean;
+  onScreenReaderChange: (v: boolean) => void;
 }
 
 //Renders the side drawer with chat actions and app settings.
-const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
+const ChatDrawer = ({ open, onClose, onNewChat, screenReaderEnabled, onScreenReaderChange }: ChatDrawerProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [highContrast, setHighContrast] = useState(() => {
     return localStorage.getItem('highContrast') === 'true';
   });
-  const [screenReader, setScreenReader] = useState(false);
   const { lang, setLang, t, isRTL } = useLanguage();
   const firstFocusRef = useRef<HTMLButtonElement>(null);
 
@@ -54,7 +55,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
   };
 
   //Reusable switch UI used by settings rows.
-  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => {
+  const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) => {
     const knobPosition = isRTL
       ? (checked ? 'left-0.5' : 'left-[calc(100%-1.375rem)]')
       : (checked ? 'right-0.5' : 'right-[calc(100%-1.375rem)]');
@@ -63,6 +64,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
       <button
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? '' : 'bg-white/20'}`}
         style={checked ? { backgroundColor: '#F8D81B' } : {}}
@@ -145,7 +147,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
                   <Eye size={18} style={{ color: '#F8D81B' }} aria-hidden="true" />
                   <span style={{ fontFamily: "'Somar', sans-serif" }} className="text-white text-sm">{t.highContrast}</span>
                 </div>
-                <Toggle checked={highContrast} onChange={setHighContrast} />
+                <Toggle checked={highContrast} onChange={setHighContrast} label={t.highContrastToggle} />
               </div>
 
               <div className="flex items-center justify-between px-3 py-2">
@@ -153,7 +155,7 @@ const ChatDrawer = ({ open, onClose, onNewChat }: ChatDrawerProps) => {
                   <AudioLines size={18} style={{ color: '#F8D81B' }} aria-hidden="true" />
                   <span style={{ fontFamily: "'Somar', sans-serif" }} className="text-white text-sm">{t.screenReader}</span>
                 </div>
-                <Toggle checked={screenReader} onChange={setScreenReader} />
+                <Toggle checked={screenReaderEnabled} onChange={onScreenReaderChange} label={t.screenReaderToggle} />
               </div>
 
               <div className="flex items-center justify-between px-3 py-2">

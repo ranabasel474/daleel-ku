@@ -164,7 +164,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
             <button
               onClick={cancelRecording}
               className="shrink-0 w-9 h-9 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-muted-foreground/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-              aria-label="Cancel recording"
+              aria-label={t.cancelRecording}
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -189,7 +189,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
             <button
               onClick={confirmRecording}
               className="shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-              aria-label="Confirm recording"
+              aria-label={t.confirmRecording}
             >
               <Check size={16} aria-hidden="true" />
             </button>

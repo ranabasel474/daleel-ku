@@ -32,6 +32,10 @@ const translations = {
     botLogoAlt: 'Daleel KU bot',
     typingAriaLabel: 'Daleel KU is typing',
     disclaimer: 'Never share personal information.',
+    cancelRecording: 'Cancel recording',
+    confirmRecording: 'Confirm recording',
+    highContrastToggle: 'Toggle high contrast',
+    screenReaderToggle: 'Toggle screen reader',
 
     // Admin - Layout
     adminPanel: 'Admin Panel',
@@ -162,6 +166,10 @@ const translations = {
     botLogoAlt: 'بوت DALEEL KU',
     typingAriaLabel: 'DALEEL KU يكتب',
     disclaimer: 'لا تشارك معلوماتك الشخصية أبدًا.',
+    cancelRecording: 'إلغاء التسجيل',
+    confirmRecording: 'تأكيد التسجيل',
+    highContrastToggle: 'تبديل التباين العالي',
+    screenReaderToggle: 'تبديل قارئ الشاشة',
 
     // Admin - Layout
     adminPanel: 'لوحة الإدارة',
