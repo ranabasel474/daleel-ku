@@ -6,7 +6,6 @@ import {
   LogOut,
   Menu,
   X,
-  Settings,
   ChevronUp,
   LayoutDashboard,
 } from 'lucide-react';
@@ -106,14 +105,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           {/* Popover menu */}
           {profileOpen && (
             <div className="mb-2 bg-card text-card-foreground rounded-lg shadow-lg border border-border overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
-              <Link
-                to="/admin/settings"
-                onClick={() => { setProfileOpen(false); setSidebarOpen(false); }}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
-              >
-                <Settings size={16} className="text-muted-foreground" />
-                <span>Settings</span>
-              </Link>
               <button
                 onClick={() => { setProfileOpen(false); setSidebarOpen(false); logout(); }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"

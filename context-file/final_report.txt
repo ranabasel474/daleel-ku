@@ -1,0 +1,1856 @@
+Kuwait University College of Life Sciences
+Daleel KU: A Bilingual RAG-Based AI Academic Chatbot for Kuwait University
+ISC 499 ­ Capstone Spring 2025/2026
+Instructor: Dr. Bader Alkhazi
+Students: 2221191253 Rana Omar 2221168768 Mahnoor Akhtar
+May 1st, 2026
+
+Note:
+New content added in this final report is colored in blue throughout the document to distinguish it from content carried forward from previous reports.
+pg. 1
+
+Table of Contents
+Introduction............................................................................................................................ 5 Problem Statement............................................................................................................... 6 Project Objectives ................................................................................................................ 6 System Scope and Justification ........................................................................................... 7 System Scope ...................................................................................................................... 7 Justification ......................................................................................................................... 7 Global and Local Effects of the System .............................................................................. 8 Benefits for Students........................................................................................................... 8 Benefits for Kuwait University Staff .................................................................................. 8 Regional and Global Impact ............................................................................................... 9 Related Work and Evidence Studies.................................................................................... 9 Overview of Existing Solutions ........................................................................................ 10 Identified Gaps and Motivation ........................................................................................ 10
+Project Planning and Management.................................................................................... 12 Project Plan Overview ....................................................................................................... 13 Gantt Chart........................................................................................................................ 13 Deliverables Table ............................................................................................................ 13 Dependencies and Constraints .......................................................................................... 14 Activity Descriptions ......................................................................................................... 15 Project Planning and Scope Definition ............................................................................. 15 Application of Software Development Life Cycle (SDLC) .............................................. 17 Iterations Overview........................................................................................................... 17 Iterations Outcomes .......................................................................................................... 17
+System Requirements .......................................................................................................... 19 Functional Requirements ................................................................................................... 20 Requirement Elicitation Techniques and Strategies ......................................................... 20 Functional Modeling......................................................................................................... 22 Non-Functional Requirements........................................................................................... 38
+pg. 2
+
+Performance Requirements ............................................................................................... 38 Security Requirements ...................................................................................................... 39 Usability Requirements..................................................................................................... 40 Scalability Requirements .................................................................................................. 41 Software Requirements..................................................................................................... 41 Hardware Requirements.................................................................................................... 42 External Interfaces ............................................................................................................ 43 Risk Analysis ..................................................................................................................... 44
+System Design....................................................................................................................... 47 Design Modeling ............................................................................................................... 48
+Design Strategies .............................................................................................................. 48 Security Strategies ............................................................................................................ 49 Integrity............................................................................................................................. 50 Architectural Modeling...................................................................................................... 51
+Physical Architecture Diagram ......................................................................................... 51 Architecture Layers........................................................................................................... 53 Package Diagram .............................................................................................................. 54 Program Design Modeling................................................................................................. 55
+Design Class Diagram ...................................................................................................... 55 Use Case Realization ........................................................................................................ 57 Data Modeling ................................................................................................................... 63
+Database Schema .............................................................................................................. 63 Data Dictionary................................................................................................................. 63 User Interface Design ........................................................................................................ 66
+Student Interface ............................................................................................................... 67 Admin Interface ................................................................................................................ 69 System Development............................................................................................................ 74 Testing Plan ....................................................................................................................... 75
+Testing Objectives ............................................................................................................ 75 Testing Environment......................................................................................................... 75 Test Strategy ..................................................................................................................... 75 Tests Conducted................................................................................................................ 76
+pg. 3
+
+Specifications Implementation .......................................................................................... 96 Backend Development ...................................................................................................... 96 RAG Pipeline .................................................................................................................... 99 Frontend Development ................................................................................................... 102 Database Implementation................................................................................................ 104
+Code Correctness, Robustness, and Security................................................................... 107 System Documentation .................................................................................................... 113
+In-Code Documentation.................................................................................................. 113 External Documentation ................................................................................................. 115 Source Code Repository ................................................................................................. 115 Current Limitations.......................................................................................................... 115 Conclusion & Supporting Materials ................................................................................ 117 Conclusion ....................................................................................................................... 118 References........................................................................................................................ 119 Appendices ...................................................................................................................... 120 Appendix A: Survey Questions and Results ................................................................... 120
+pg. 4
+
+(1) Introduction
+
+Problem Statement
+Kuwait University students regularly require guidance on academic procedures, administrative processes, and campus-related services throughout their student life. Although this information is available through official platforms and university offices, it is often dispersed across multiple sources, making it difficult for students to quickly locate accurate and relevant answers. As a result, many students repeatedly seek assistance from academic and administrative offices across the university for common inquiries, increasing operational pressure on staff and limiting the efficiency of existing support mechanisms.
+This project proposes the development of an AI-enabled chatbot designed to enhance access to university information from multiple credible sources. The chatbot will provide general guidance applicable to all Kuwait University students, while offering more detailed and structured academic information for the College of Life Sciences (CLS) students, in alignment with the project scope and available domain knowledge. By centralizing essential university-wide and CLS-specific information within a single intelligent platform, the chatbot improves accessibility, reduces repetitive inquiries, and represents a practical and sustainable application of artificial intelligence aimed at improving efficiency and student experience within Kuwait University.
+Project Objectives
+The primary objective of this project is to develop Daleel KU, an AI-enabled bilingual chatbot that provides Kuwait University students with accurate, centralized access to academic and administrative information, reducing reliance on informal channels and repetitive inquiries to staff.
+The specific objectives are as follows:
+1. Develop a RAG-based system that grounds all responses in verified official KU sources with source transparency.
+2. Support bilingual interaction in Arabic and English. 3. Provide university-wide information support covering admission, academic procedures,
+university policies, and campus services for specific colleges. 4. Deliver enhanced academic guidance for College of Life Sciences students, including
+course prerequisites, sequencing, and GPA estimation.
+pg. 6
+
+5. Build an automated content ingestion pipeline that processes KU websites, PDFs, and social media into a searchable knowledge base.
+6. Provide an administrative control panel for knowledge base management, query log monitoring, and system statistics.
+7. Ensure accessibility through high contrast mode, screen reader support, voice-to-text input, and keyboard navigation.
+System Scope and Justification
+System Scope
+Daleel KU serves four user groups: prospective students, enrolled KU students, CLS students, and authorized administrative staff. All users receive general university-wide support including guidance on academic procedures, admission requirements, and university policies. CLS students additionally receive course-specific guidance, prerequisite information, course sequencing, and GPA estimation.
+The following are explicitly out of scope: private student academic records, official academic advising, and detailed department-specific guidance for colleges other than CLS. The system does not replace human advisors for complex cases and makes no official academic commitments on behalf of Kuwait University. The architecture is designed to support expansion to additional colleges in future enhancements.
+Justification
+University information is currently fragmented across multiple platforms, forcing students to rely on informal channels and placing repetitive load on administrative staff. A RAG approach was chosen over purely generative AI to ground responses in verified official KU content, ensuring accuracy and traceability to official university sources. Bilingual support in Arabic and English is justified by the presence of non-Arabic-speaking students within KU's student population, ensuring equitable access for all users. The CLS scope reflects the availability of verified academic data within the project timeline. The decision to develop Daleel KU was further validated through a student survey conducted across multiple Kuwait University colleges prior to development. The results confirmed that the challenges this system aims to address are widely experienced, and that
+pg. 7
+
+students expressed genuine interest in an AI-based solution, with a usage likelihood rating of 4.35 out of 5.
+Global and Local Effects of the System
+The deployment of Daleel KU produces measurable effects at both the local institutional level and the broader regional and global level. These effects span academic, administrative, technological, and social dimensions.
+Benefits for Students
+· Providing a single centralized platform that combines academic and administrative information related to Kuwait University.
+· Enabling continuous access to information at any time, without dependence on office hours or staff availability.
+· Supporting bilingual interaction in Arabic and English, allowing students to receive information in their preferred language.
+· Assisting students in understanding academic procedures such as admission requirements, course registration processes and other administrative procedures.
+· Reducing information-seeking effort and confusion caused by having multiple websites, social media accounts, and informal communication channels.
+Benefits for Kuwait University Staff
+· Reducing the load of repetitive routine inquiries directed to administrative and academic staff.
+· Ensuring consistency and alignment of responses with official university policies and approved sources.
+· Minimizing the spread of misinformation and contradictory guidance across departments. · Allowing staff members to focus on complex cases that require human judgment and
+individualized support.
+pg. 8
+
+Regional and Global Impact
+At the regional level, Daleel KU represents one of the first implemented bilingual AI academic RAG-based chatbots designed specifically for a Kuwaiti university. The system shows that academic AI tools can be built reliably using modern retrieval-augmented generation technology including bilingual support for Arabic and English, providing a replicable model for other universities across Kuwait and the broader Gulf Cooperation Council region.
+At the global level, the project contributes to the growing body of work on domain-specific conversational AI systems in higher education. The system's design addresses challenges that are relevant beyond Kuwait, including cross-lingual semantic retrieval between Arabic and English, transparent uncertainty handling through source citation, and human-in-the-loop governance through an administrative control panel. These design decisions reflect internationally recognized best practices in responsible AI deployment and could inform similar implementations at universities in other Arabic-speaking countries or multilingual institutional environments worldwide.
+From a social impact perspective, Daleel KU promotes equity in information access within Kuwait University by ensuring that all students, regardless of their language preference, social network, or familiarity with university systems, have equal access to accurate and timely academic information.
+Related Work and Evidence Studies
+The use of AI-based chatbots in higher education has grown significantly in recent years, with universities worldwide deploying conversational systems to assist students with academic advising, registration, campus services, and technical support. This trend reflects a broader recognition that centralized, intelligent information systems can reduce administrative burden and improve student experience on a scale. Within Kuwait, several university chatbot implementations have emerged that are directly relevant to this project:
+pg. 9
+
+Overview of Existing Solutions
+AUK Admission Chatbot The American University of Kuwait developed a chatbot to support prospective students by
+providing information about programs, admission requirements, application procedures, eligibility checks, frequently asked questions, and personalized program recommendations [1].
+FalconAI: Custom University Chatbot (ChatGPT API) FalconAI is a customizable AI chatbot developed for Gulf University of Science and
+Technology (GUST) in Kuwait, designed to provide quick reference and support services to students and faculty at any time. The system is built using Python and the ChatGPT API [2].
+Kuwait University Research Sector Projects Unit (RSPU) Chatbot Kuwait University has a deployed AI assistant on the Research Sector Projects Unit portal.
+The assistant provides information about RSPU's scientific research facilities, available analytical instruments, ongoing research projects, and sample analysis request procedures. It also explains details about scientific devices such as spectrometers, chromatographs, and elemental analyzers [3].
+AUKbot: IT Support AI Virtual Assistant AUKbot is an AI-enabled chatbot developed for technical support services at the American
+University of Kuwait. The system addresses technical queries from students, staff, and faculty, reducing the workload on the existing IT helpdesk [4].
+Identified Gaps and Motivation
+The review of existing systems highlights that while AI-based chatbots have been successfully deployed in various university contexts in Kuwait, each of the reviewed systems was developed to serve a specific and narrow institutional function, whether admissions processing, IT technical support or research facility inquiries. None of the reviewed systems were designed to serve the broad range of academic and administrative needs of Kuwait University students in a unified platform.
+This gap motivated the development of Daleel KU. Kuwait University students require a single system that can address general university information, respond in the student's preferred
+pg. 10
+
+language, and ground every response in official university sources. CLS students additionally benefit from course prerequisites, GPA estimation, and campus services specific to their college. No existing local system addresses this combination of needs. Daleel KU was designed specifically to fill this gap, offering a unified, bilingual, source-transparent, and institutionally governed academic assistant for Kuwait University students, with the architecture designed to expand to additional colleges in future enhancements.
+pg. 11
+
+(2) Project Planning and Management
+
+Project Plan Overview
+Gantt Chart
+The project timeline was initially defined at the start of the project and subsequently updated during the development phase to reflect actual progress and schedule adjustments made. The updated Gantt chart below represents the final timeline as executed:
+
+Deliverables Table
+The following deliverables represent the outcomes of the project:
+
+Deliverable AI Chatbot Web Application
+Final Comprehensive Report
+
+Description A fully functional AI-enabled chatbot accessible via desktop and mobile browsers, providing university-wide information for prospective and enrolled students, with enhanced academic support for College of Life Sciences (CLS) students. A detailed academic report documenting the project, including the system design, functionalities, and development process.
+
+pg. 13
+
+Final Project Presentation
+
+A presentation summarizing the project objectives, system capabilities, and outcomes, intended to communicate the project outcomes.
+
+Dependencies and Constraints
+Dependencies a. Official University Data Sources: The chatbot depends on access to accurate and up-todate information from official Kuwait University sources, including the KU website, student handbooks, course catalogs, and College of Life Sciences resources. Content is pre-ingested and stored in the system's own knowledge base rather than queried live, meaning the chatbot remains functional even if official websites experience downtime or structural changes. Authorized administrators are responsible for periodically refreshing the knowledge base through the administrative panel to ensure content remains current. b. Digital Infrastructure and technical tools: The development relies on AI frameworks, natural language processing libraries, and web development technologies compatible with both desktop and mobile environments. In addition, a stable internet connection is required to use the system. c. Administrative Oversight: The system depends on authorized KU staff to oversee content, manage data ingestion, and validate updates as part of the human-in-the-loop governance process. d. Student and User Engagement: Successful use of the chatbot depends on students and prospective users actively engaging with the system and providing feedback to improve functionality.
+Constraints a. Scope Limitation: The system provides university-wide information to high school students seeking admission and to students enrolled in other colleges at KU. Detailed academic guidance and planning support are offered only to College of Life Sciences students. b. Data Availability: The chatbot can only access information that is publicly available or provided through authorized channels, it cannot access private academic records or restricted administrative data.
+
+pg. 14
+
+c. Data Sources Reliability: The chatbot's responses rely on the accuracy and consistency of the information from official university sources. In cases of missing data, the system transparently communicates the uncertainty to the user and tells them to refer to official sources.
+d. User Input Quality: The chatbot's understanding depends on users entering clear, grammatically reasonable queries. Ambiguous or highly complex questions may reduce accuracy. A character limit of 1,000 characters per query is enforced to maintain response quality and prevent prompt injection attempts.
+e. Legal and Ethical Considerations: The chatbot protects user privacy by ensuring that any personal information, such as grades or other sensitive data provided by one user, is not shared with other users. The system must also avoid providing misleading information or making admission guarantees. No personally identifiable information is collected or stored. Query logs record only the submitted query text, the generated response, and a timestamp, with no link to any individual user identity.
+Activity Descriptions
+The project was executed through a series of structured technical and organizational activities:
+Project Planning and Scope Definition
+The project began with defining the system scope, objectives, target users, and overall boundaries. This included clarifying university-wide support features, enhanced academic support for College of Life Sciences students, and system constraints to ensure realistic implementation within the semester timeframe.
+Requirements Gathering Functional and non-functional requirements were identified. This included chatbot
+capabilities, bilingual interaction, GPA estimation, academic planning guidance, accessibility considerations, and system performance expectations. Multiple elicitation techniques were employed including document analysis, supervisor consultation, structured interviews with institutional stakeholders, and a student survey with approximately 50 respondents.
+pg. 15
+
+Data Collection Relevant information was gathered from official Kuwait University sources including the KU
+website, student handbooks, and CLS-specific materials. All collected content is chunked, embedded, and stored in the Supabase pgvector knowledge base. System Design and Architecture
+The overall system architecture was designed, including the chatbot core logic, retrieval mechanism, backend structure, integration workflow, and administrative control considerations, these will be discussed in detail in Section 4 of the report.
+Frontend UI Development The web-based user interface was developed using React, TypeScript, Tailwind CSS, and
+Vite. The student-facing interface includes an animated landing page, a bilingual chat interface with voice-to-text input, source citations attached to responses, typing indicators, high contrast mode, and keyboard navigation. The administrative panel includes a login page, dashboard with real-time statistics, content management page, and query logs page with session grouping and CSV export.
+Chatbot Core Logic and Retrieval System The chatbot's natural language processing capabilities and information retrieval mechanism
+were implemented. This includes query classification, Arabic text normalization, semantic vector search, context assembly, response generation with language mirroring, source citation, and fallback handling for unanswered queries. Data ingestion pipeline was implemented to support three source types: web pages, PDF documents, and social media content. All ingested content is chunked and stored persistently in the database. Backend and Full Integration
+The backend was developed to handle all student and administrative API requests. It manages session creation, query routing, RAG pipeline invocation, GPA estimation, admin authentication, knowledge base management, and anonymous query logging.
+pg. 16
+
+Testing and Adjustment The system underwent functional, integration, security, and accessibility testing throughout
+the development phase. Identified issues were analyzed and corrected iteratively. Testing covered frontend behavior, backend API correctness, security enforcement, and accessibility compliance.
+
+Application of Software Development Life Cycle (SDLC)
+
+This project followed an Iterative Software Development Life Cycle (SDLC) model, which allows progressive refinement through repeated cycles of planning, development, and evaluation. The iterative approach was chosen because it enables building a functional prototype early, gather feedback, and make improvements in subsequent iterations. This was particularly suitable for this project, as the chatbot system required continuous refinement of the knowledge base, response accuracy, and user interface based on testing and evaluation outcomes.
+
+Iterations Overview
+The project was structured into five iterations as follows:
+
+Iteration Period Iteration 1 Feb 3 ­ Feb 12 Iteration 2 Feb 13 ­ Mar 1 Iteration 3 Mar 2 ­ Mar 26 Iteration 4 Mar 27 ­ Apr 19 Iteration 5 Apr 19 ­ May 1
+
+Focus Project planning, scope definition, initial research Requirements gathering, data collection, functional modeling System design, UI design, database schema, architecture System development, testing, implementation Final refinements, complete implementation
+
+Deliverable Report I
+Report II
+Report III
+Report IV
+Final Report + Presentation
+
+Iterations Outcomes
+Iteration 1: The project scope, objectives, system capabilities, and project plan were defined. Four related systems were reviewed as part of the literature study. The iterative SDLC model was selected and five iterations were planned.
+
+pg. 17
+
+Iteration 2: System requirements were gathered using four elicitation techniques. A student survey was prepared and distributed, approximately 50 respondents validated the core problem statement. Seven use cases were defined, data flow diagrams and activity diagrams were produced, an entity relationship diagram was designed, and non-functional requirements were documented. Iteration 3: The full system design was completed. This included security strategy design, user interface mockups for both the student chat interface and the administrative panel, the database schema, the system package diagram, the design class diagram, the physical architecture diagram, and use case realization sequence diagrams. The application was named "Daleel KU". Iteration 4: System development and technical components were selected and used for implementation. More than 50% of specifications were implemented by the end of this iteration. Conducted tests TC01­TC21 all passed, covering frontend behavior, backend API correctness, integration, security, and accessibility. Iteration 5: All remaining specifications were completed. All remaining planned tests in previous phases were executed. The final knowledge base was ingested.
+pg. 18
+
+(3) System Requirements
+
+Functional Requirements
+Requirement Elicitation Techniques and Strategies
+Document Analysis Document analysis served as a foundational requirement elicitation technique that
+established the baseline for this project. This method was chosen because official university resources provide accurate, verified information and reflect how students currently access services. The following resources were analyzed:
+1. The official Kuwait University website and academic portal 2. Official Kuwait University social media channels 3. Existing chatbot systems at other universities (see Related Work Section) Through conducting document analysis, several insights were identified. Information is scattered across multiple platforms, making it difficult for students to find what they need. Critical updates such as schedule changes are only announced through social media accounts rather than official portals. Additionally, the student handbook, a primary resource for students, is only available in Arabic, creating a gap for non-Arabic speaking students. These findings justified the need for a centralized, bilingual, conversational system.
+Supervisor Consultation Our consultations with the project supervisor, Dr. Bader Alkhazi, were treated as a formal
+elicitation technique during the beginning of planning and requirements gathering phases. These sessions were structured around scope clarification and directional feedback on system boundaries. This ensured that the requirements being gathered remain academically realistic within the capstone timeline, and responsive to the standards expected of a formal system specification.
+Interview A structured interview was held, this technique was chosen because, unlike surveys,
+interviews allow for open-ended exploration, follow-up questioning, and the possible discovery of implicit requirements.
+pg. 20
+
+Vice Dean of Students' Affairs The Vice-Dean of Students' Affairs, Dr. Sharifa Alkandari, was identified as the most suitable
+consultation given her office's oversight of student-facing administrative services at the institutional level. While students are often directed to Dr. Sharifa's office for matters that require higher-level authorization or administrative escalation in College of Life Sciences, many students also approach her office directly for broader administrative concerns, making her office a comprehensive source of insight into the full range of student administrative needs. The interview with Dr. Sharifa provided us with insights:
+· Most common student inquiries: Transfer rules, course information, GPA-related questions, academic warnings, graduation requirements.
+· On digital channels: Dr. Sharifa confirmed that any question involving a written university rule can be answered digitally. However, students tend to rely on unofficial WhatsApp groups which frequently contain inaccurate content, directly validating the core motivation behind Daleel KU.
+· Recommended sources: College and department official websites, the Vice Dean's and Dean of Admission and Registration's official social media accounts, and department chairs for course-specific information.
+· Chatbot boundaries: Questions about case-specific academic records, insufficient information should always be redirected to the appropriate office and the GPA estimation should only be advisory.
+· Expectations: The chatbot's information must be verified and reliable so students naturally shift away from informal channels.
+Survey-Based Validation A student survey was conducted to gather broad quantitative input directly from the student
+population (see Appendix A for survey questions and survey results). The survey was distributed early to capture student perspectives on information-seeking behavior and chatbot feature preferences across Kuwait University's colleges. Approximately, 50 responses were collected from students across multiple colleges, with the majority of respondents from the College of Life Sciences, followed by Engineering and Petroleum, Medicine, Business Administration, and Allied Health Sciences.
+pg. 21
+
+The survey results strongly validated the core problem statement of this project. When asked about the challenges they face when searching for university information, the majority of respondents identified information being scattered across multiple platforms as their primary challenge, followed by long processes to find answers, outdated information, and having to contact multiple departments. Furthermore, when asked where they first look for academic or administrative information, students ranked friends and classmates as their most used source, followed by official social media accounts and WhatsApp groups, with the official KU website ranking only fourth. The overall results confirm that students face difficulty finding information and rely more on informal channels for information.
+Regarding the proposed chatbot, students expressed strong interest with an average usage likelihood rating of 4.35 out of 5. The most requested topics were registration, campus services, GPA calculation, prerequisite courses, university policies, and equivalent courses, directly validating the core use cases defined in this report. Additionally, students rated source transparency as important with an average rating of 4.52 out of 5, confirming the decision to include source references alongside chatbot responses as a key feature.
+Functional Modeling
+Use Case Analysis The use case analysis presents the functional requirements of the system by modeling
+interactions between actors and the chatbot. The following components illustrate these interactions and their detailed specifications:
+pg. 22
+
+Use Case Diagram:
+
+Figure 1: Use Case Diagram
+
+Use Case Specification:
+
+Identification
+
+UC01 ­ Manage Chatbot Knowledge Base
+
+Actors Involved
+
+Primary Actor: Kuwait University Admin Staff
+
+Brief Description
+
+The use case allows authorized staff to manage the knowledge base of the chatbot by adding, modifying, and deleting content to ensure that the content is accurate and up to date.
+
+Assumptions
+
+The knowledge base stores official academic information.
+
+The system supports authenticated administrative access.
+
+Preconditions
+
+The admin user is authenticated.
+
+The system is operational and accessible.
+
+Postconditions
+
+The knowledge base is updated successfully.
+
+The updated information becomes available for chatbot responses.
+
+Priority
+
+High
+
+pg. 23
+
+Frequency of Use Main flow of Events
+Alternate/Exception Flows
+Included Use Cases
+
+Moderate (annually during academic updates or policy changes).
+1. Admin logs into the system. 2. The system verifies credentials. 3. Admin accesses the knowledge base management interface. 4. Admin does an operation (Add, Modify, or Delete). 5. Admin enters or edits relevant information. 6. The system validates the input. 7. The system updates the database. 8. The system confirms successful update.
+A1: Invalid Login
+2a. The system displays authentication error message. 2b. The admin retries logging in.
+A2: Invalid Data Entry
+5a. The system displays validation error. 5b. The admin corrects the data entry.
+E1: System Error
+7a. The system displays an error message. 7b. No changes are saved.
+Add Data Modify Data Delete Data
+
+Identification Actors Involved Brief Description
+Assumptions Preconditions Postconditions
+Priority Frequency of Use Main flow of Events
+
+UC02 ­ Submit Query Primary: Prospective Student / KU Student / CLS Student Allows users to submit queries and receive responses based on official university information. Knowledge base contains relevant information. System is operational and accessible. User receives response. Interaction logged anonymously. High Very High 1. User enters query. 2. System processes query.
+
+pg. 24
+
+Alternate/Exception Flows
+Included Use Cases
+
+3. System retrieves relevant information. 4. System generates and sends a response. 5. System logs the query and the response. A1: No information found 3a. Redirect to official contact. E1: System error Display error message. View Resource Reference
+
+Identification Actors Involved Brief Description
+Assumptions Preconditions
+Postconditions Priority Frequency of Use Main flow of Events
+Alternate/Exception Flows
+Included Use Cases
+
+UC03 ­ Get Admission Information Primary: Prospective / High School Student The use case provides prospective students with admission requirements and procedures. Admission data exists in the knowledge base. The system is operational and accessible. The user can access the chatbot. The student receives relevant admission details. High High (during admission periods) 1. Student submits admission query. 2. System retrieves official data. 3. System displays response. A1: No information found 2a. Redirect to official contact. E1: System error Display error message. Submit Query
+
+Identification Actors Involved
+
+UC04 ­ Explore Available Academic Programs Primary Actor: Prospective Student
+
+pg. 25
+
+Brief Description
+Assumptions Preconditions Postconditions Priority Frequency of Use Main flow of Events
+Alternate/Exception Flows
+Included Use Cases
+
+This use case enables students to explore available academic programs and related information about the program and their academic future. Program information is available in the knowledge base. The system is operational. The student receives program descriptions and requirements. Medium Moderate 1. The student sends a query about available programs. 2. The system retrieves program information. 3. The system displays a response with appropriate program details. A1: No information found 2a. Redirect to official contact. E1: System error Display error message. Submit Query
+
+Identification Actors Involved Brief Description
+Assumptions Preconditions
+Postconditions
+Priority Frequency of Use Main flow of Events
+
+UC05 ­ Estimate GPA Primary: General Kuwait University Student This use case allows students to estimate their GPA based on manually entered course grades and credits. GPA calculation formula is predefined in the system. The system is operational. The student provides course grades and credit hours. The estimated GPA is displayed to the student. No personal academic data is permanently stored. Medium Moderate (During exam periods) 1. Student selects GPA estimation. 2. Student enters grades. 3. System calculates GPA.
+
+pg. 26
+
+Alternate/Exception Flows
+Included Use Cases
+
+4. System displays result and gives suggestion. A1: No information found 2a. Redirect to official contact. E1: System error Display error message. Submit Query
+
+Identification Actors Involved Brief Description
+Assumptions Preconditions Postconditions Priority Frequency of Use Main flow of Events
+Alternate/Exception Flows
+Included Use Cases
+
+UC06 ­ Access Campus Services Information Primary: College of Life Sciences Student Provides students with information about campus services that are available in College of Life Sciences. Service information of CLS is available on the knowledge base. The system is operational. The student receives specific service details at College of Life Sciences. High High (during the beginning of the semester) 1. Student submits service query related to CLS. 2. System retrieves relevant service information. 3. System displays response. A1: No information found 2a. Redirect to official contact. E1: System error Display error message. Submit Query
+
+Identification Actors Involved Brief Description
+
+UC07 ­ Get CLS Course Guidance Primary: College of Life Sciences Student This use case enables CLS students to receive course planning guidance and prerequisite information.
+
+pg. 27
+
+Assumptions Preconditions Postconditions Priority Frequency of Use Main flow of Events
+Alternate/Exception Flows Included Use Cases
+
+CLS program data exists in the knowledge base.
+The system is operational.
+The student receives course guidance response.
+High (within College of Life Sciences scope)
+High (during registration period)
+1. Student submits CLS query. 2. System retrieves program structure. 3. System displays prerequisites and sequence or course specific
+guidance.
+A1: Missing course data Redirect to advising office or academic advisor.
+1. Submit Query 2. Plan Course Sequence 3. View Course Prerequisites
+
+User Stories
+
+1. High School Students / Prospective
+
+· As a prospective student, I want to access admission requirements and application details so that I can prepare properly for university admission.
+
+· As a prospective student, I want to explore available academic programs and their descriptions so that I can choose a suitable major.
+
+2. General Kuwait University Student
+· As a Kuwait University student, I want to ask general university-related questions so that I can quickly obtain accurate academic information.
+· As a Kuwait University student, I want to estimate my GPA so that I can plan my academic performance and future study decisions.
+
+3. College of Life Sciences (CLS) Student
+· As a CLS student, I want to receive course guidance specific to my major so that I can make informed registration decisions.
+
+pg. 28
+
+· As a CLS student, I want to plan my course sequence so that I can complete program requirements efficiently.
+· As a CLS student, I want to view course prerequisites and equivalent courses so that I can avoid registration errors.
+· As a CLS student, I want to access campus services information so that I can make use of available university facilities and resources.
+4. All Primary Users · As a user, I want responses to be based on official university sources so that I can trust the information provided. · As a user, I want to be redirected to the appropriate official department when the chatbot cannot answer my question so that I can obtain accurate assistance. · As a user, I want to view the source reference behind the chatbot's response so that I can verify the information. · As a user, I want to interact with the chatbot in Arabic or English so that I can receive information in my preferred language.
+5. Secondary Users: Kuwait University Administration Staff · As a KU administrator, I want to add, modify, and delete content in the chatbot's knowledge base so that the information provided to students remains accurate and up to date. · As a KU administrator, I want to review query logs so that I can identify gaps in the knowledge base and improve the chatbot's responses.
+Data Flow Diagrams In this section, two Data Flow Diagrams (DFDs) are presented using Yourdon and Coad's
+notation to show how data moves through the Academic Chatbot system. The Level 0 diagram provides a high-level overview of the system and its interactions with external entities, while the Level 1 diagram zooms into the internal processes of the system and details how data flows between them.
+pg. 29
+
+DFD Level 0 ­ Context Diagram Level 0 (L0) shows two main external entities that interact with the system:
+· Students (Prospective, General KU, and CLS students): Students submit queries to the chatbot and receive responses in return. Each response includes a source reference when relevant information is found in the knowledge base.
+· KU Administrative Staff: Staff submit content updates to maintain the knowledge base through the administrative control panel. The system returns query logs and statistics, including session-grouped records and summary figures such as total queries, answered queries, referral cases, and total documents. Advanced analytical processing is a planned future enhancement.
+The system interacts with a Knowledge Base data store, retrieving relevant information to answer student queries and storing updated content following administrative actions.
+Figure 2: Level 0 Context Data Flow Diagram
+Level 1 ­ Detailed Data Flow The Level 1 (L1) Data Flow Diagram expands on the Context Diagram (L0) by breaking the
+system into five internal processes, revealing how data moves through the chatbot internally. These processes are mentioned below:
+· Process Query: The entry point of the system. When a student submits a query, it is received and routed accordingly. General academic queries are directed to the Retrieve
+pg. 30
+
+Information process, while GPA-related queries are routed to the Calculate GPA Estimate process. · Retrieve Information: Upon receiving a query, this process searches the Knowledge Base and retrieves the relevant data along with its source reference, which is then passed to the Generate Response process. · Generate Response: This process takes the retrieved information and formats it into a response that is returned to the student. It logs the query and response anonymously into the Query Log data store. · Calculate GPA Estimate: This process handles GPA queries independently without interacting with the Knowledge Base. It receives grade input from the student, returns a calculated GPA estimate directly, and logs the query and response anonymously into the Query Log data store. · Manage Content: This process is triggered exclusively by administrative staff. It receives content updates from the admin and applies them to the Knowledge Base. The admin also accesses query logs and statistics from the Query Log data store to support knowledge base improvements.
+
+pg. 31
+
+Figure 3: Level 1 Detailed Data Flow Diagram
+
+Behavioral Modeling
+Behavioral modeling describes how the system responds to events and transitions between different states over time. Unlike functional modeling, which focuses on what the system does, behavioral modeling captures how the system behaves dynamically during interactions. In this section, three types of behavioral diagrams are presented: Activity Diagrams, which illustrate the step-by-step flow of key system processes; Sequence Diagrams, which show the order of interactions between system components; and State Transition Diagrams, which show the states that the system moves through during a session. Activity Diagrams
+Activity diagrams are used to model the dynamic behavior of the system by illustrating the flow of key system activities. The following diagrams represent the key workflows within the Chatbot system:
+pg. 32
+
+Student Query Flow:
+Figure 4: Student Query Flow Activity Diagram The diagram above illustrates the main interaction between students and the chatbot. The flow begins when a student enters and submits a query. This query can be classified into two types: GPA estimation, which does not require referring to the knowledge base and is handled through a separate process as shown above and general queries, which require searching the knowledge base for relevant information where the system retrieves matching information and generates a response with source citation. If no match is found, a fallback message is displayed with the appropriate department to refer to. The student can then choose to continue asking questions or end the session. pg. 33
+
+GPA Estimation:
+Figure 5: GPA Estimation Flow Activity Diagram This diagram illustrates the GPA estimation flow, which is triggered when the system identifies a query as GPA-related. The student submits their query with course grades and credit hours. The system first checks whether all required information is provided. If anything is missing, it requests the missing details from the student, who then resubmits. Once the information is complete, the system identifies the GPA type. For a semester GPA, it calculates using the grades and credit hours for that semester. For a cumulative GPA, it factors in the previous GPA, previous credit units, and current semester results, including any retaken courses. The system then formats the answer and appends a disclaimer reminding the student to verify the result with their official academic record. The final estimate is returned to the student, and the query and response are logged anonymously before the flow ends. pg. 34
+
+Admin Content Management:
+
+pg. 35
+
+Figure 6: Admin Content Management Flow Diagram
+
+The above diagram shows the workflow of an authorized Kuwait University administrator interacting with the chatbot's control panel. The process begins with the admin navigating to the panel and entering their credentials, with failed authentication prompting a retry. Upon successful login, the admin can either manage knowledge base content by adding, modifying, or deleting entries or view anonymized query logs to identify gaps and inform future content improvements. Finally, the admin can then perform another action or log out to end the session.
+State Transition Diagrams State Transition Diagram ­ User Query This diagram models the behavior of the chatbot system during a student interaction session. To summarize the behavioral flow, key steps are mentioned below: 1. The system begins in an Idle state and transitions to
+Waiting for Input once the user opens the chatbot. 2. Upon query submission, the system enters the Processing
+Query state and routes the query based on its type: general queries proceed to Retrieving Knowledge, while GPArelated queries are directed to Calculating GPA. 3. Once knowledge is retrieved or the GPA is calculated, the system transitions to Generating Response and subsequently to Displaying Response. 4. From the Displaying Response state, the user may either submit another query, returning the system to Waiting for Input, or exit the session, transitioning the system to Session Ended.
+Figure 7: State Transition Diagram ­ User Query
+pg. 36
+
+State Transition Diagram ­ Admin Control Panel
+
+The diagram models the behavior of the administrative control panel. This behavioral modeling is
+
+described as follows:
+
+1. The system begins in an Idle state and
+
+transitions to Authenticating once the
+
+admin navigates to the panel and enters
+
+credentials.
+
+2. Invalid credentials transition the system to
+
+Authentication Failed, from which the
+
+admin can retry.
+
+3. Upon successful authentication, the
+
+system transitions to Control Panel, from
+
+which the admin can select content
+
+management which transitions the system
+
+through Managing Content, Updating
+
+Knowledge Base, and Update Confirmed
+
+before returning to Control Panel, or the
+
+admin may select query log which
+
+transitions the system to Viewing Query
+
+Logs and subsequently to Reviewing
+
+Logs.
+
+Figure 8: State Transition Diagram ­ Admin
+
+4. The admin can perform further actions or
+
+log out, transitioning the system to Session Ended.
+
+Sequence Diagram The sequence diagram illustrates the interaction flow between the Student, Chatbot, and
+Knowledge Base when processing an academic query. The flow begins when a student submits a query, which the chatbot processes by searching the knowledge base for relevant information. Based on the results, the chatbot either returns the answer with a source citation or identifies the appropriate department to refer the student to.
+
+pg. 37
+
+Figure 9: Sequence Diagram for Student Query
+Non-Functional Requirements
+Performance Requirements
+Performance requirements define the expected operational efficiency of the chatbot system. These requirements ensure that the system performs reliably under normal and peak academic usage conditions: · Response Time: Rapid generation of responses to ensure a prompt and efficient user
+experience. Simple queries shall be processed within a range of 4-7 seconds based on the query complexity, while complex queries requiring deeper knowledge base retrieval may take additional time. · Accuracy: High precision in understanding and addressing student queries, with source citations provided for verified information.
+pg. 38
+
+· Throughput: Ability to handle multiple concurrent users during prototype testing, with stable session management throughout active conversations.
+· Adaptability: The knowledge base structure allows for continuous updates and expansion to accommodate evolving student needs and new information.
+· Reliability: Dependable performance with 24/7 availability, ensuring the chatbot is accessible when needed.
+Security Requirements
+The chatbot system is designed as an open-access platform for current and prospective students, meaning no login or authentication is required for general use. However, security considerations remain critical given that the system handles academic information, processes user queries, and includes an authenticated administrative control panel with content management capabilities. The following security requirements have been defined to ensure the system operates safely and responsibly.
+Administrative Access Control The administrative control panel requires secure authenticated access restricted to authorized Kuwait University staff. This ensures:
+· Only approved personnel can add, modify, or delete knowledge base content and review query logs
+· Administrative privileges are explicitly granted and inaccessible to general users · Admin credentials are managed and maintained by authorized university staff Anonymized Query Logging To support continuous system improvement, anonymized query logs are maintained. Each log entry records only the query submitted, the response generated, and a timestamp, with no personally identifiable information captured or linked to any entry. These logs are used solely to identify gaps in the knowledge base to improve responses. Access to query logs is restricted exclusively to authorized administrative personnel through the admin control panel.
+Data Privacy and Session Management Since the chatbot operates without student authentication, no personal student data is collected, stored, or retained. This ensures:
+pg. 39
+
+· No personal student information is stored or exposed · GPA inputs and query content are never tied to any individual · Users are advised not to include personally identifiable information such as their name or
+student ID in their queries, as the system is not responsible for personal information voluntarily included in submitted queries Transmission Security and Input Validation All data transmitted between the user's device and the system is secured through HTTPS encryption, protecting query content and system responses from interception. Backend systems and the knowledge base are protected through standard cloud security configurations provided by the selected hosting platform.
+Usability Requirements
+The chatbot system is designed to be intuitive, accessible, and inclusive for all users across Kuwait University's diverse student population. The following usability requirements have been defined to ensure a consistent and equitable user experience.
+1. Ease of Use The interface is designed to require minimal prior experience or technical knowledge to operate. Students should be able to submit a query and receive a response without navigating through multiple steps or menus. The conversational interface follows familiar chat-based interaction patterns, reducing the learning curve for first-time users.
+2. Bilingual Support The system intends to provide full and equal support for both Arabic and English. The interface accommodates both languages simultaneously, and the chatbot aims to automatically detect the language of the user's input and respond accordingly.
+3. Accessibility The system is designed to be accessible to users with diverse accessibility needs through the following features:
+pg. 40
+
+o Voice Input: Users can interact with the chatbot using voice input as an alternative to typing, ensuring accessibility for users who may have difficulty with text-based interaction.
+o Screen Reader Compatibility: The interface is designed to be compatible with standard screen readers, ensuring that visually impaired users can navigate and interact with the system effectively.
+4. Responsive Design The interface is fully responsive and adapts to different screen sizes and device types, including desktops, laptops, smartphones, and tablets, ensuring a consistent experience regardless of the device used.
+Scalability Requirements
+This section outlines the scalability requirements to accommodate future growth in user load and data volume in the chatbot:
+· The system shall support a minimum number of concurrent users during the prototype phase without performance degradation, with the ability to scale and accommodate all Kuwait University students in the future.
+· The architecture must allow horizontal scaling to support university-wide deployment. · The knowledge base is structured by college and topic, enabling expansion to include more
+colleges and extra information without affecting the performance. · The system follows a modular architecture, allowing new features and integrations to be added
+with minimal impact on existing functionality.
+Software Requirements
+Programming Language and Web Framework The system requires a programming language and web framework capable of supporting API
+development, integration with AI, and efficient handling of concurrent requests. The backend must be able to expose RESTful endpoints for both student-facing and administrative operations, enforce authentication, and apply rate limiting. The frontend requires a component-based
+pg. 41
+
+JavaScript framework capable of building a responsive, bilingual, and accessible user interface that communicates with the backend through API calls.
+Large Language Model (LLM) API The system requires access to a large language model API capable of natural language
+understanding and generation in both Arabic and English. The LLM must support query classification, grounded response generation based on retrieved context, GPA estimation using a structured grade scale, image-based text extraction for processing visual content from knowledge sources, and document classification. The model must be accessible via API and support structured JSON output for consistent response parsing.
+Retrieval-Augmented Generation (RAG) Framework The system requires a RAG framework to orchestrate the full pipeline from document
+ingestion to response generation. This includes document chunking and splitting, embedding generation, vector store integration, semantic similarity search, context assembly, and conversation memory management across multi-turn sessions. The framework must support Arabic text normalization to ensure consistent embedding quality across Arabic content.
+Database Management System The system requires a cloud-hosted relational database capable of storing structured data
+including user query logs, session records, administrative accounts, knowledge base documents, and document chunks. The database must support vector storage and semantic similarity search through a vector extension, enabling efficient retrieval of relevant knowledge base content at query time.
+Version Control System A version control system is required to manage the codebase throughout the development
+lifecycle, supporting collaborative development, change tracking, and code backup.
+Hardware Requirements
+1. Server-Side Requirements The system requires a server capable of running a Python-based web application with stable internet connectivity to communicate with external services including the large language model
+pg. 42
+
+API, database provider, PDF parsing service, web crawling service, and social media scraping service. The server must handle concurrent student requests, execute the RAG pipeline, and manage active conversation memory. Additionally, at its current stage the system runs locally. When adopted at a larger institutional scale, the backend can be hosted on a cloud platform to ensure continuous availability independent of local infrastructure.
+2. Client-Side Requirements The system places minimal hardware requirements on the client side. Any device capable of running a modern web browser is sufficient, including smartphones, tablets, and desktop computers. The device must have internet connectivity to access the web application. For students making use of the voice-to-text input feature, the device must have a functioning microphone.
+External Interfaces
+Detailed design and technical components used are documented in Section 4 and Section 5.
+User Interface The system provides web-based interfaces corresponding to its primary and secondary users.
+The student-facing interface is a conversational chat application accessible through any modern browser on desktop or mobile devices. The interface follows a standard chat layout with a message input field at the bottom and a scrollable conversation history above. All screens display a consistent header identifying the chatbot as an official Kuwait University tool. The interface supports full bilingual display in Arabic and English, with automatic right-to-left rendering for Arabic text. Source references are displayed with responses. Error messages, such as those triggered by unrecognized queries or connectivity issues, are displayed inline within the chat in a clearly distinguishable format.
+The administrative interface is a separate secured panel accessible only to authorized Kuwait University staff following credential-based authentication. It provides clearly labeled controls for adding, modifying, and deleting knowledge base content, as well as a dedicated section for reviewing anonymized query logs. Error messages for failed authentication are displayed prominently within the panel.
+pg. 43
+
+Hardware Interfaces The system does not require direct interaction with specialized hardware components. On the
+client side, standard input devices including keyboards, touchscreens, and microphones for voice input are supported through the web browser. The system is designed to function across a range of devices including desktops, laptops, smartphones, and tablets.
+Software Interfaces The system requires interfacing with the following categories of external software services:
+· Large Language Model API for query understanding, response generation, and GPA estimation
+· Vector database for storing and retrieving semantically embedded knowledge base content · PDF parsing service capable of accurately handling Arabic right-to-left documents · Web crawling service for extracting content from official Kuwait University websites · Social media scraping service for collecting content from official Kuwait University
+accounts
+As mentioned previously, at its current stage the system runs locally. When adopted at a larger institutional scale, the backend can be hosted on a cloud platform.
+Communications Interfaces The system communicates over HTTP between the client and server, with all data exchanged
+in JSON format. Administrative access requires token-based authentication. The public chat interface must include rate limiting to prevent abuse. Cross-origin requests are restricted using CORS, allowing only the designated frontend URL to communicate with the backend. When deployed to production, all communication must be conducted over HTTPS to ensure data encryption in transit.
+Risk Analysis
+The following risk analysis identifies potential risks associated with the development and deployment of the Daleel KU system, along with their impact and the mitigation strategies implemented in the system.
+pg. 44
+
+Risk ID R01 R02 R03 R04
+R05 R06 R07
+R08
+
+Risk Description OpenAI API downtime or rate limits Incomplete or missing knowledge base content
+Students misinterpreting GPA estimates as official academic results Prompt injection attacks where users craft inputs to override system instructions Unauthorized access to the administrative control panel Arabic text matching failures due to inconsistent text formatting Knowledge base content becoming outdated as Kuwait University updates policies and announcements Server errors or connectivity loss
+
+Impact Students receive no responses
+Students receive unhelpful or incomplete responses
+Students make wrong academic decisions based on unofficial estimates Chatbot gives misleading answers or behaves unexpectedly
+Attacker modifies the knowledge base or views student query logs Students receive no results for valid Arabic queries
+Students receive outdated or incorrect information
+Users see broken or confusing responses
+
+Mitigation A fallback message is returned when API calls fail, ensuring students are informed rather than receiving a broken response Chatbot clearly communicates lack of information, further the admin panel shows which queries are always referred so administrators to add, edit, and delete knowledge base content at any time A disclaimer is appended to every GPA response clearly stating that the result is an estimate only and not an official record
+A 1,000-character input limit is enforced, all inputs are sanitized by removing null bytes, the system prompt and user input are structurally separated in all LLM calls
+JWT authentication is required on all admin routes, an error response is returned for any request with a missing or invalid token Arabic normalization removing kashida and diacritics is applied at both ingestion and query time to ensure consistent embeddings
+The admin content management interface allows administrators to update content, periodic re-crawling of official web and social media sources can be done
+Graceful JSON error messages are returned ensuring users always receive a readable response
+
+pg. 45
+
+R09
+
+High traffic or Server becomes Rate limiting of 30 requests per minute
+
+abusive usage
+
+slow or
+
+per IP address is enforced on all chat
+
+causing server unresponsive
+
+endpoints via Flask-Limiter
+
+overload
+
+affecting all users
+
+R10
+
+Student/User
+
+Privacy violation if No login required on the user chat
+
+privacy
+
+query logs are tied interface, query logs are available but
+
+compromised
+
+to an individual never tied to any user
+
+student or user
+
+R11
+
+Data loss due to Knowledge base Embeddings are stored persistently in
+
+local storage
+
+lost and system Supabase pgvector on the cloud, ensuring
+
+failure
+
+becomes unusable the knowledge base survives server
+
+restarts and is not dependent on local
+
+storage
+
+pg. 46
+
+(4) System Design
+
+Design Modeling
+Design Strategies
+Designing a system that is easy to build, maintain, and scale requires deliberate and thoughtful decisions from the start. The following strategies outline the approach taken to ensure Daleel KU remains structured, manageable, and adaptable throughout its development lifecycle.
+Design Approach The system follows a top-down design approach, starting with a broad view of what the system
+needs to do and working down into the details. Rather than jumping straight into individual components, the chatbot was first defined as a complete system, one that answers student queries, and then broken down into subsystems: data collection, processing, storage, backend logic, and frontend interface.
+Design Paradigm A modular design paradigm was chosen to keep things focused and straightforward. Each part
+of the system is responsible for one specific task, whether it is scraping websites or social media content, extracting content from PDFs, managing document chunking and retrieval, or handling API requests.
+Design Benefits Modularity: meaning that the system is divided into self-contained components, each with a clear responsibility. They communicate through well-defined interfaces, so one component can be updated, debugged, or replaced without touching the others. This makes troubleshooting simpler and leaves room for future additions, like new data sources or a different language model. Reusability: which cuts down on duplicated effort and keeps behavior consistent across the system. The document processing pipeline works the same way regardless of where the content comes from, and the same logic handles embedding generation and search whether the source is a website, a PDF, or a social media post. This consistency reduces redundancy and makes the system easier to maintain over time.
+pg. 48
+
+Security Strategies
+The Academic Chatbot system is designed as an open-access platform, meaning no authentication is required from general student users. However, since the system handles academic information, processes user queries, and includes a privileged administrative control panel, a layered security approach has been adopted across all components of the system. The following security measures define how the system protects data, controls access, and maintains integrity throughout its operation:
+Authentication and Authorization Access to the administrative control panel is restricted to authorized Kuwait University staff
+through Supabase Auth. Upon successful login, Supabase issues a JSON Web Token (JWT) that is stored client-side and included in subsequent requests to the Flask backend. The backend verifies the token on each request by calling Supabase's get_user API, ensuring that only authenticated administrators can access functions such as knowledge base management and query log review. Unauthorized users attempting to access the admin panel are denied access and presented with an authentication error.
+Session Management Administrative sessions are governed by JWT expiration configured in Supabase Auth.
+After the token expires, the admin must re-authenticate to regain access.
+Transport Layer Security When the system is deployed to a production environment, all communication between the
+client and the server will be conducted over HTTPS, ensuring that data transmitted between the user's device and the system is encrypted in transit.
+Rate Limiting To protect the system from excessive or abusive usage, rate limiting is applied to all public
+query endpoints using Flask-Limiter, restricting each client to 30 requests per minute per IP address.
+pg. 49
+
+Input Validation and Injection Prevention All user inputs submitted through the chat interface are validated and sanitized on the
+server side before processing. A 1,000-character limit is enforced on all queries. Inputs are sanitized by removing hidden characters that could interfere with backend processing.
+· SQL injection is mitigated across all database operations through Supabase's client library, which uses parameterized queries by default, ensuring that user input is never directly embedded into database queries.
+· Prompt injection is mitigated by maintaining a strict separation between the system prompt and user input within all LLM API calls, each is passed as a distinct message role, preventing user text from overriding system instructions.
+Data Privacy and Anonymized Logging Since the user-facing interface operates without user authentication, no personally identifiable
+information is collected, stored, or linked to any interaction. Query logs maintained by the system record the submitted query text, the generated response, whether the query was successfully answered, and a timestamp. No information that identifies the individual user is stored.
+Integrity
+Integrity ensures that the system's software and data remain accurate, consistent, and trustworthy throughout operation. The following subsections describe how integrity is maintained at each level.
+Security-Based Integrity The security measures described in the previous section play a direct role in maintaining
+system integrity. Authentication and authorization ensure that only authorized administrators can modify the knowledge base, preventing unauthorized changes to system content. Transport layer security ensures that data transmitted between the user interface and backend services cannot be altered during transit when deployed to a production environment. Input validation and sanitization prevent malicious inputs from corrupting stored data.
+pg. 50
+
+Software Integrity Software integrity focuses on ensuring the system's codebase remains reliable, secure, and
+free from unauthorized modifications. GitHub is used as the version control system, which allows all code changes to be tracked, documented, and reviewed before being merged into the main codebase. This approach provides a complete history of modifications and enables reverting to previous versions if issues arise. The system follows a change management process where proposed modifications are reviewed and approved before being merged, preventing unplanned changes from affecting system stability.
+Data Integrity Data integrity ensures that information stored and processed by the system remains accurate,
+consistent, and trustworthy. When users submit queries, the system validates the input before processing to ensure that empty, excessively long, or malformed queries are rejected. The chatbot knowledge base is sourced exclusively from official Kuwait University channels, including the KU website, KU portal, and verified social media accounts, ensuring that all information provided to students is accurate and institutionally approved. Each document added to the knowledge base is timestamped to track when it was uploaded or last updated, allowing content to remain current and traceable to its origin. Only authenticated administrators can modify the knowledge base, while students interact with the system through a read-only interface. All ingested content whether from web pages, PDF documents, or social media posts goes through a structured ingestion pipeline that chunks, normalizes, and embeds the content before storing it in the Supabase pgvector knowledge base, ensuring consistency across all knowledge base entries.
+Architectural Modeling
+Physical Architecture Diagram
+The physical architecture design diagram presented above illustrates how the system components are structured and interconnected to meet the functional and non-functional requirements identified in the system requirements section.
+pg. 51
+
+pg. 52
+
+Figure 10: Physical Architecture Design
+
+Architecture Layers
+The system architecture is organized into five layers, each responsible for a distinct set of functions that together form an end-to-end pipeline moving data from external sources through processing and storage into the backend logic and finally to the user-facing interface. The following describes the purpose of each layer: Data Sources The system collects information from three main sources: KU websites and social media content, scraped using Firecrawl and Apify respectively, and PDF documents parsed using LlamaParse for content extraction. Processing To prepare the data for the knowledge base, LlamaIndex transforms the raw content into searchable chunks for the RAG system and generates vector embeddings that enable semantic search across the knowledge base. For image-based content, GPT-4o Vision extracts text through OCR before the content is processed and stored. Database Supabase serves as the central data store, providing PostgreSQL for relational database and pgvector for storing and querying vector embeddings. Backend For the backend, Flask handles incoming API requests from the frontend, manages RAG queries through LlamaIndex, and communicates with OpenAI GPT-4o for response generation and GPA estimation. Frontend The React interface provides students with a chat experience and allows administrators to manage content through a dedicated dashboard.
+pg. 53
+
+Package Diagram
+Figure 11: System Package Diagram The package diagram shows the main components of the Daleel KU system and how they interact with external services. The Frontend communicates with the Backend through RESTful API calls, while the Backend orchestrates requests between the Frontend, the RAG Pipeline, and the Database. The RAG Pipeline processes student queries by retrieving relevant data chunks from the database and generating bilingual responses using OpenAI, and it also uses LlamaParse for extracting content from PDFs. Data ingestion feeds the knowledge base using sources such as websites via Firecrawl, social media via Apify, and PDFs through LlamaParse. The Database stores all system data using Supabase with pgvector for vector embeddings, along with Supabase Storage for uploaded files. External services supporting the system include the OpenAI API (used for response generation, classification, and vision-based OCR), the LlamaParse API for PDF extraction, Firecrawl API for web crawling, Apify API for social media scraping, as well as Supabase Auth for admin JWT authentication and Supabase Storage for managing PDF file storage.
+pg. 54
+
+Program Design Modeling
+Design Class Diagram
+Figure 12: Design Class Diagram The Design Class Diagram above shows the structure of the system, organized into six sections: Frontend, Backend, RAG Pipeline, Data Ingestion, Database Models and External Services. Different relationships are also represented in the diagram, including association, navigable association, composition, and dependency, capturing the structural connections and usage dependencies between classes across all sections. Below are the system's design classes and their relationships, organized by section as follows: pg. 55
+
+Frontend This contains the ChatInterface and AdminPanel as the student and admin-facing components respectively and APIService which handles all communication between the frontend and the backend.
+Backend This consists of the ChatController and AdminController which handle incoming requests, Auth which manages admin authentication and session tokens, QueryProcessor which detects query type and language and routes accordingly, and InputValidator which validates all inputs before processing.
+Retrieval Augmented Generation (RAG) Pipeline This section contains IngestionPipeline which loads, chunks, and embeds documents into the knowledge base, QueryEngine which performs semantic vector search and builds context from retrieved chunks, and ResponseGenerator which constructs the prompt, generates the response via OpenAI, handles fallback messages, and appends source references.
+Data Ingestion This section contains WebScraper, PDFExtractor, and SocialMediaScraper which collect content from KU's website, PDF documents, and official social media accounts respectively, and Scheduler which automates all ingestion tasks on a defined interval.
+Database This section contains all nine entity classes: Profiles, Session, Document, Data_Chunks, Source, Topic, College, Major, and User_Query showing the system's data model as defined in the database schema.
+External Services This section consists of three interface classes, OpenAI API, Firecrawl API, and Apify API representing the third-party services the system depends on for response generation, website crawling and social media scraping respectively.
+pg. 56
+
+Use Case Realization
+Use case realization describes how system use cases are carried out through interactions between components. Sequence diagrams were selected as the interaction diagram type for this system, as they effectively capture the order of messages exchanged between participants over time. Three main use cases were chosen for realization based on their centrality to the system, as defined in the Use Case Analysis section: UC01 Manage Chatbot Knowledge Base, UC02 Submit Query, and UC05 Estimate GPA.
+pg. 57
+
+1. Manage Chatbot Knowledge Base
+
+pg. 58
+
+Figure 13: Sequence Diagram - UC01 Manage Knowledge Base
+
+This diagram shows the interaction flow between system components when an authorized administrator manages the chatbot knowledge base. The flow proceeds as follows:
+· Authentication: The admin submits their credentials through the Admin Panel, which forwards them to the Backend Server. The Backend Server internally verifies the credentials.
+· Alt Fragment - Credential Validation: Two outcomes are possible. If credentials are invalid, an authentication error is returned and displayed to the admin, who is prompted to retry. If credentials are valid, a session token is issued, and the Admin Dashboard is loaded.
+· Action Selection and Content Validation: The admin selects a content management action (Add, Modify, or Delete) through the Admin Panel, which forwards the content update to the Backend Server. The Backend Server internally validates the submitted content before proceeding.
+· Alt Fragment - Input Validation: Two outcomes are possible. If the input is invalid, a validation error is returned and displayed to the admin, who is prompted to correct and resubmit. If the input is valid, the Backend Server writes the content to the Knowledge Base, which confirms the update. A successful confirmation is then returned and displayed to the admin.
+· Loop Fragment: If the admin chooses to perform another action, the flow repeats from the action selection step.
+· Logout: The admin initiates logout, upon which the Admin Panel sends a session token invalidation request to the Backend Server. The Backend Server confirms the invalidation, and a logout confirmation is displayed, ending the session.
+pg. 59
+
+2. Submit Query
+Figure 14: Sequence Diagram - UC02 Submit Query The diagram shows the interaction flow between system components when a student submits a query. The flow proceeds as follows:
+· Query Submission: The student submits a query through the Frontend UI, which forwards it to the Backend Server.
+· Query Type Detection: The Backend Server identifies whether the query is a general academic question or a GPA-related request and routes it accordingly.
+· Knowledge Retrieval: For general queries, the Backend Server delegates to the RAG Pipeline, which searches the Knowledge Base and retrieves relevant text chunks along with their source references.
+pg. 60
+
+· Response Generation: The retrieved content is passed to the LLM API, which generates a context-aware natural language response.
+· Alternative Fragment: Two outcomes are possible at this stage. If relevant information is found, the result and source reference are returned and formatted into a response. If no information is found, the Backend Server identifies the appropriate official department to redirect the student to.
+· Logging: Regardless of outcome, the query and response are anonymously logged to the Database for future knowledge base improvement.
+· Response Display: The formatted response is returned to the Frontend UI and displayed to the student, who may then submit a new query or end the session.
+3. Estimate GPA
+
+pg. 61
+
+Figure 15: Sequence Diagram - UC05 Estimate GPA
+
+The diagram shows the interaction flow between system components when a student requests a GPA estimation. The flow proceeds as follows:
+· Query Submission: The student submits a GPA-related query through the Frontend UI, which forwards it to the Backend Server.
+· Query Type Detection: The Backend Server identifies the query as a GPA estimation request and routes it to the LLM API for processing.
+· Course Details Request: The LLM API generates a prompt requesting the student's course information, including grades, credit hours, previous cumulative GPA, previous registered units, and any retaken courses. This prompt is forwarded back through the Backend Server to the Frontend UI and displayed to the student.
+· Data Submission: The student provides the requested course data, which is forwarded through the Frontend UI to the Backend Server.
+· Input Validation: The Backend Server validates the submitted inputs to ensure grades are within the accepted scale, credit hours are positive integers, and optional fields such as previous GPA fall within the valid range.
+· GPA Calculation: Once validated, the data is passed to the LLM API, which calculates both the semester GPA and the expected cumulative GPA using the Kuwait University grade scale defined in its system prompt.
+· Response Formatting: The LLM API formats the result into a user-friendly response and appends a disclaimer stating that the calculation is an estimate for reference only and should be verified against official academic records.
+· Logging: The query and response are anonymously logged to the Database for analytics and system improvement purposes.
+· Response Display: The formatted GPA result is returned to the Frontend UI and displayed to the student, who may then submit a new query or end the session.
+Note: In the diagram, stInput represents the student input object containing expected grades for current courses and their credit hours, along with current GPA, and number of previously registered credits.
+pg. 62
+
+Data Modeling
+Database Schema
+The database schema defines how data is organized and stored within the system. It consists of nine tables designed to support the chatbot's core functionality, including storing user queries, managing administrator accounts, and organizing the knowledge base content.
+
+Figure 16: Database Schema of The Daleel KU System
+Data Dictionary
+
+profiles
+Field id
+
+Data Type UUID
+
+Constraints PK
+
+email full_name created_at
+
+TEXT TEXT TIMESTAMP
+
+Relationship:
+
+· One profile can manage many documents (1:N)
+
+Description Unique identifier for each admin, linked to Supabase Auth Admin email address used for authentication Full name of the admin user Date and time the admin account was created
+
+pg. 63
+
+college
+
+Field college_id college_name college_name_ar
+
+Data Type INT TEXT TEXT
+
+Constraints PK NOT NULL
+
+Description Unique identifier for each college Name of the college in English Name of the college in Arabic
+
+Relationship:
+
+· One college can have many majors (1:N)
+
+· One college can be associated with many sources (1:N)
+
+· One college can be associated with many documents (1:N)
+
+major
+
+Field major_id major_name major_name_ar major_code college_id
+
+Data Type INT TEXT TEXT TEXT INT
+
+Constraints PK NOT NULL
+FK
+
+Description Unique identifier for each major Name of the major in English Name of the major in Arabic Official university code for the major Reference to the college this major belongs to
+
+Relationship:
+
+· Many majors belong to one college (N:1)
+
+· One major can be associated with many sources (1:N)
+
+· One major can be associated with many documents (1:N)
+
+source
+Field source_id source_name url status last_scraped source_type
+college_id major_id crawl_depth crawl_limit
+
+Data Type UUID TEXT TEXT source_status TIMESTAMP source_type_enum
+
+Constraints PK NOT NULL Unique
+
+INT
+
+FK
+
+INT
+
+FK
+
+crawl_depth
+
+INT
+
+Description Unique identifier for each source Name of the source URL of the source Current scraping status of the source Date and time the source was last scraped Type of source: webpage, PDF, or social media College this source is associated with Major this source is associated with Depth level for web crawling Maximum number of pages to crawl from this source
+
+pg. 64
+
+Relationship: · One source can be associated with many documents (1:N)
+
+topic
+
+Field topic_id topic_name
+
+Data Type UUID TEXT
+
+Constraints PK NOT NULL
+
+Description Unique identifier for each topic Name of the topic (e.g., Registration, Admission)
+
+Relationship:
+
+· One topic can be associated with many data chunks (1:N)
+
+document Field document_id title source_url
+date_added
+
+Data Type UUID TEXT TEXT
+TIMESTAMP
+
+Constraints PK NOT NULL Nullable, Unique
+Nullable
+
+document_type TEXT
+
+Nullable
+
+admin_id
+
+UUID
+
+FK, Nullable
+
+source_id
+
+UUID
+
+FK, Nullable
+
+major_id
+
+INT
+
+FK, Nullable
+
+Relationship: · Many documents can be added by one admin (N:1) · Many documents can belong to one source (N:1) · One document can produce many data chunks (1:N)
+
+Description Unique identifier for each document Name or title of the document Original URL of the document if applicable Date and time the document was added to the system Type of document: PDF, webpage, or social media Reference to the admin who added the document Reference to the source this document belongs to Reference to the major this document is relevant to
+
+data_chunks
+Field id text
+
+Data Type INT VARCHAR
+
+Constraints PK NOT NULL
+
+Description Unique identifier for each chunk The text content of the chunk
+
+pg. 65
+
+metadata_
+
+JSONB
+
+Nullable
+
+node_id
+
+VARCHAR
+
+Nullable
+
+embedding
+
+VECTOR
+
+Nullable
+
+Relationship: · Many chunks belong to one document (N:1)
+
+session
+
+Field
+
+Data Type
+
+Constraints
+
+session_id
+
+UUID
+
+PK
+
+started_at ended_at
+
+TIMESTAMP TIMESTAMP
+
+Nullable Nullable
+
+Relationship: · One session can contain many user queries (1:N)
+
+user_query Field query_id query_text response_text
+was_answered
+created_at
+session_id
+
+Data Type UUID TEXT TEXT
+BOOLEAN
+TIMESTAMP
+UUID
+
+Constraints PK NOT NULL Nullable
+Nullable
+Nullable
+FK, Nullable
+
+Relationship: · Many queries belong to one session (N:1)
+
+Metadata associated with the chunk including source and topic references Internal identifier used by LlamaIndex for retrieval Vector representation of the chunk used for semantic search
+Description Unique identifier for each anonymous session Date and time the session began Date and time the session ended
+Description Unique identifier for each query The query submitted by the student The response generated by the system Indicates whether the query was successfully answered Date and time the query was submitted Reference to the session in which the query was submitted
+
+User Interface Design
+
+The User Interface Design for the system is divided into two sections: the student-facing chat interface and the administrative control panel. The system is responsive and adapts across desktop, tablet, and mobile devices. The interface also adheres to accessibility standards established in the
+
+pg. 66
+
+system requirements. Text contrast ratios meet readability guidelines to support users with visual impairments. The voice-to-text input feature accommodates users who have difficulty typing.
+The student chat follows a language-mirroring policy, the chatbot detects the student's input language and responds in the same language. In addition, the Admin interfaces can be switched between Arabic and English. Student interface screenshots in this section are presented in mobile view while the admin panel screenshots are presented in desktop view to reflect realistic usage.
+Student Interface
+The student interface consists of two main screens designed to provide a simple and welcoming experience without requiring any login or registration.
+Landing Page The landing page is the entry point for students when accessing the chatbot. It features an
+animated entrance with the Daleel KU logo blinking and growing into view, creating a welcoming first impression.
+
+pg. 67
+
+Figure 17: Daleel KU landing page
+
+Chat Interface The chat interface is the core screen where students interact with the chatbot, following a
+familiar messaging layout. It consists of a header displaying the Daleel KU logo and a hamburger menu, a conversation area where student queries and chatbot responses are displayed, and an input bar at the bottom where students can type their message or use the voice-to-text feature. While the system processes a query, status messages are displayed to the student indicating the current stage, such as "Looking for relevant answers" and "Generating your response", keeping the student informed during the retrieval and generation process. Each chatbot response includes copy and regenerate action buttons, and where applicable, a source reference is attached below the response so students can verify the information against the original document.
+
+pg. 68
+
+Figure 18: Student Chat Interface
+
+The hamburger menu provides access to two options: starting a new chat session, which resets the conversation, and opening the settings panel. The settings panel allows students to enable high contrast mode for improved visual accessibility, enable screen reader support, and switch the interface language between Arabic and English.
+
+Figure 19: Chat interface side menu
+
+Figure 20: Settings panel showing accessibility and language options
+
+Admin Interface
+
+The administrative panel consists of four main interfaces. After logging in, the admin is directed to the Dashboard, which serves as the central hub. From there, the admin can navigate to the Content Management page to manage the knowledge base or the Query Logs page to review student interactions.
+
+pg. 69
+
+Login Page
+Figure 21: Admin Login Page The Admin interface begins with an Admin Login page providing secure access to the system's administrative panel. Authorized Kuwait University staff enter their username and password then click Sign In to authenticate making access exclusively restricted to authenticated administrators, with invalid credentials triggering an error message.
+pg. 70
+
+Dashboard
+Figure 22: Admin Dashboard Interface The Dashboard is the admin's main overview page, structured into three sections: Overview: Four visual cards at the top display real-time system statistics to give the admin an instant snapshot of system performance: Total Documents in the knowledge base, Total Queries received, Answered Queries, and Referral Queries. Answered queries are those where the chatbot successfully returned a response from the knowledge base. Referral queries are those where no relevant information was found and the student was redirected to the appropriate Kuwait University department. Recent Queries: A table showing the five most recent student queries, each displaying the query text, status (Answered or Referral), and time. A View All button navigates to the full Query Logs page. Latest Content: It displays the most recently added documents, showing each document's title, type, topic, college, and date added. A View All button navigates to the full Content Management page.
+pg. 71
+
+Content Management
+Figure 23: Admin Content Management Interface The Content Management page allows administrators to manage the chatbot's content, structured as follows: Content Table: This displays all documents in the knowledge base with the following columns: Title, Type (PDF, URL, etc.), College, Topic, Date Added, and Source URL. Actions: Each row has an edit icon to modify a document's details and a delete icon to remove it from the knowledge base. Add Document: Add Document button in the top right allows administrators to add new content to the knowledge base and classify it by document type, source URL, topic, and college. Search: A search bar is also integrated to allow administrators to filter documents by title or topic.
+pg. 72
+
+Query Logs
+Figure 24: Admin Query Logs Interface The Query Logs page allows administrators to monitor all student interactions with the chatbot, structured as follows: Filters: A search bar and three filter buttons (All, Answered, Referral) allow administrators to quickly find and narrow down specific queries. Session-Based Logs: Queries are grouped by session, with each session showing its date and total query count. Within each session, individual queries are displayed with their full query text, the chatbot's response, status (Answered or Referral), and timestamp. Export CSV: Export CSV button on the top right allows administrators to download the full query log for reporting or analysis purposes.
+pg. 73
+
+(5)
+System Development
+
+Testing Plan
+
+This testing plan verifies that all implemented components of the Daleel KU system function correctly, handle edge cases robustly, and meet the functional and non-functional requirements defined in the system requirements and design sections. Tests are organized into two groups: previously conducted tests carried forward from earlier development stages, and new tests executed during the final implementation phase.
+
+Testing Objectives
+· Confirm that implemented features behave according to the use cases defined in the system requirements.
+· Ensure the system handles invalid inputs and errors gracefully · Verify that the frontend and backend communicate correctly end-to-end · Validate that security requirements from the system design phase are enforced
+
+Testing Environment
+
+Component Details
+
+Backend
+
+Flask development server, localhost:5000
+
+Frontend
+
+React + Vite, localhost:8080
+
+Database
+
+Supabase (cloud-hosted PostgreSQL + pgvector)
+
+LLM
+
+OpenAI GPT-4o via API
+
+Testing Tools Browser (Chrome), Windows Terminal, curl
+
+Test Strategy
+Testing for the Daleel KU system employs three approaches: manual testing using the browser and curl for direct API endpoint verification, automated backend testing using pytest which is a python testing framework, and AI-assisted frontend testing using a testing tool called Antigravity. The following testing types were applied:
+
+pg. 75
+
+Functional Testing verifies that each implemented feature behaves according to its specification in the use case descriptions defined in the system requirements. Functional testing is divided into two categories:
+· AI-Assisted Frontend Testing is implemented using Antigravity, an AI-assisted testing tool. Antigravity launches a local instance of the application and uses an AI agent to interact with the interface as a real user would opening pages, clicking buttons, filling forms, and visually verifying correct behavior. This approach was applied to verify the student chat interface and admin panel workflows.
+· Automated Backend Testing is implemented using pytest and Flask's built-in test client to programmatically verify API endpoint behavior, input validation logic, and authentication enforcement without relying on manual execution.
+Integration Testing verifies that the system components communicate correctly with each other end-to-end, covering the connection between the React frontend, the Flask backend, the RAG pipeline, and the Supabase database.
+Security Testing verifies that the security requirements defined in the system design are enforced, including input validation, rate limiting, and admin authentication.
+Accessibility testing verifies that the system meets the accessibility requirements defined, ensuring the interface is usable by students with diverse needs. This includes verification of voice input functionality, high contrast mode, and screen reader compatibility on the student chat interface.
+Tests Conducted
+Several tests were executed, some tests were conducted previously but as new features were added new test cases were performed, these tests are indicated as "NT". Each test is classified by type and mapped to the relevant use cases where applicable, few screenshots are added to showcase some of these tests in the report.
+Functional Testing - Frontend Frontend functional testing was conducted using Antigravity. All executed tests passed,
+covering the landing page auto-navigation, Arabic welcome message display, empty message
+pg. 76
+
+submission prevention, typing indicator behavior, new chat reset functionality, interactive button verification, Arabic fallback message when the backend is unavailable, and admin login form validation for both empty and incorrect credentials.
+
+TC-ID TC01 TC02 TC03 TC04 TC05 TC06 TC07 TC08 NT1 NT2 NT3
+
+Use Case -
+UC02
+UC02 UC02
+UC02 UC02
+UC02 -
+UC01
+UC01
+UC01
+
+Description
+
+Result
+
+Evidence
+
+Landing page animated logo displays and auto-navigates to chat Student submits a general query in Arabic
+Student submits a general query in English Arabic and English queries about the same topic return consistent and correct answers Empty message cannot be submitted Typing indicator displays while backend processes
+New chat resets conversation and creates new session All interactive buttons function correctly
+Admin login with real Supabase Auth credentials
+Admin dashboard loads real statistics from database
+Admin adds document and it appears in knowledge base table
+
+Logo animates and redirects to chat within 2.2 seconds Bot responds in Arabic with relevant answer from knowledge base Bot responds in English with relevant answer Both queries returned similar answers with accurate information Send button is disabled, no request sent to backend Typing indicator appears and disappears when response arrives Conversation clears and new session ID is created All buttons respond correctly and trigger expected behavior Admin successfully authenticated and redirected to dashboard Dashboard displays real query count, document count, and answered rate Document saved to Supabase and visible in admin Knowledge Base page
+
+Figure 25
+Figure 26 Figure 25 & 26 Figure 27 Figure 28
+Figure 29, 30 & 31 Figure 32
+Figure 33 & 34
+
+pg. 77
+
+NT4 UC01 Admin deletes document and Document removed from Figure 35, 36
+
+it is removed from knowledge Supabase and disappears & 37
+
+base table
+
+from admin Knowledge
+
+Base page
+
+NT5 UC01 Admin views real query logs Query Logs page displays Figure 38
+
+grouped by session
+
+real student interactions
+
+from database
+
+NT6 UC02 Language mirroring verified Arabic query returns
+
+Figure 39
+
+with Arabic and English
+
+Arabic response; English
+
+queries
+
+query returns English
+
+response
+
+NT7 UC05 Full GPA estimation
+
+System correctly calculates Figure 40
+
+conversation flow tested end semester and cumulative
+
+to end
+
+GPA across multiple turns
+
+pg. 78
+
+Figure 25: TC02 and TC04 User View - Sending General Query Message in Arabic
+
+Figure 26: User View - Sending General Query Message in English
+
+[retrieval] query: '          '
+[retrieval] hits: 5
+[1] score=0.531 page=? | #   3.5... ...
+[2] score=0.458 page=? | ...3.67     ...
+[3] score=0.432 page=? | ...FC...
+127.0.0.1 - - "POST /api/query HTTP/1.1" 200
+
+[retrieval] query:'What is the minimum GPA required to graduate with honors?'
+[retrieval] hits: 5
+[1] score=0.340 page=? | #    ...
+[2] score=0.327 page=? | ...
+[3] score=0.312 page=? |    3.67......
+127.0.0.1 - - "POST /api/query HTTP/1.1" 200
+
+As shown in the figures above, both queries returned the correct graduation honors GPA of 3.67
+
+with was_answered: true. This is notable since English queries must retrieve content from an
+
+Arabic knowledge base through cross-lingual embedding matching, which produced lower
+
+retrieval scores (0.340) compared to Arabic queries (0.531). Despite this difference, the system
+
+returned consistent correct answers in both languages.
+
+pg. 79
+
+Figure 27: TC05 User View - Send Button Disabled for Empty Query
+
+Figure 28: TC06 User View - Typing indicator showing while waiting for a response
+
+Figure 29: NT1- Supabase credentials stored for admin
+
+pg. 80
+
+Figure 30: NT1- Admin login with real Supabase Auth credentials
+Figure 31: NT1- Admin login fails with incorrect Supabase Auth credentials pg. 81
+
+Figure 32: NT2 - Admin dashboard loads real statistics from database
+Figure 33: NT3 - Admin adds document and it appears in knowledge base table pg. 82
+
+Figure 34: NT3 - Supabase showing added document by Admin
+Figure 35: NT4- Admin deletes document Figure 36: NT4 - Supabase document table before deletion of document by Admin Figure 37: NT4 - Supabase document table after deletion of document by Admin pg. 83
+
+Figure 38: NT5- Admin views real query logs grouped by session
+
+pg. 84
+
+Figure 39: NT6 - Language mirroring verified with Arabic and English queries
+
+Figure 40: NT7 - Full GPA estimation conversation flow tested
+Functional Testing ­ Backend Backend functional tests were conducted using curl for manual verification and pytest for automated testing.
+
+TC-ID TC09
+TC10
+
+Use Case UC02
+UC02
+
+Description
+Valid query returns response from RAG pipeline Empty query is rejected
+
+Result
+
+Method
+
+POST /api/query returns 200 with response field
+
+pytest
+
+POST /api/query with
+
+pytest
+
+empty message returns 400
+
+Evidence Figure 41
+Figure 41
+
+pg. 85
+
+TC11 NT8 NT9 NT10 NT11 NT12 NT13
+
+UC02 UC01 UC01 UC01 UC01
+
+Query exceeding 1000 characters is rejected GET /api/admin/documents returns real document list POST /api/admin/documents saves new document to Supabase DELETE /api/admin/documents removes document from Supabase GET /api/admin/queries returns real query logs Firecrawl scraper successfully ingests KU website content Apify scraper against KU official social media
+
+POST /api/query with 1001 characters returns 400 Returns array of documents from Supabase
+Returns document appears in database
+Returns document removed from database
+Returns array of logged student interactions
+Pages from cls.ku.edu.kw and do.ku.edu.kw ingested into pgvector Posts from KU official social media accounts ingested and stored in pgvector
+
+pytest curl curl curl curl pytest pytest
+
+Figure 41 Figure 42 Figure 43 Figure 44 Figure 45 Figure 46 Figure 46
+
+Figure 41: Pytest Terminal Output - Backend API Tests Passing (TC09, TC10, TC11, TC12) pg. 86
+
+Figure 42: NT8 ­ GET returns real document list
+
+Figure 43: NT9 ­ POST saves new document to Supabase
+
+Figure 44: NT10 - DELETE removes document from Supabase (chunks_deleted: 0 because the test document was created without file upload)
+
+pg. 87
+
+Figure 45: NT11 - GET returns real query logs
+
+Figure 46: Pytest Terminal Output - Firecrawl and Apify Scraper Ingestion Tests Passing (NT12, NT13)
+
+Integration Testing
+
+TC-ID Components
+
+Description
+
+TC12 Frontend Backend Session created on chat
+
+page load
+
+Result POST /api/session returns UUID session_id
+
+Evidence Figure 41
+
+TC13 Frontend Backend Health check endpoint responds correctly
+
+GET / returns {"status": "running"} with HTTP 200
+
+Figure 47
+
+TC14 Backend  Supabase
+
+Query logged to database after submission
+
+Query and response successfully logged to the Supabase
+
+Figure 48
+
+TC15
+
+Backend  RAG  Full query pipeline
+
+OpenAI
+
+returns relevant
+
+response
+
+POST /api/query returns 200 with correct response and was_answered: true
+
+Figure 49 & Figure 50
+
+NT14
+
+Firecrawl  Backend  Supabase
+
+NT15 Backend  Supabase pgvector
+
+Web scraper ingests KU webpage and PDF documents, autoclassifies source, and stores documents with correct college_id and major_id Chunks stored in data_chunks with correct metadata and verified distribution across college and major
+
+Source marked as scraped with correct college_id, documents saved with correct major_id and source references
+Chunks stored with correct metadata and correctly grouped by college and majors
+
+Figure 51 & Figure 52
+Figure 53
+
+pg. 88
+
+NT16
+
+Firecrawl  Backend  pgvector  Chatbot
+
+Scraped content is retrievable and answerable by the chatbot end to end
+
+Chatbot correctly answers query about Information Science (ISC) program outcomes using ingested content
+
+Figure 54
+
+Figure 47: TC13- Status shows running Figure 48: TC14 - Supabase user_query Table Showing Logged Query
+
+Figure 49: TC15- RAG Pipeline Test Results
+
+pg. 89
+
+Figure 50: TC15 - Retrieval Logs pg. 90
+
+[scraper] Found 1 pending source(s). [scraper] Crawling: https://cls.ku.edu.kw/node/27444 [ingest] Source classification response: {"college_id": 18} [scraper] Auto-classified source as college_id=18 [scraper] Ingesting web page: https://cls.ku.edu.kw/node/27444 [ingest] Raw classification response: {"major_id": 1830, "topic_name": " "} [scraper] Ingested 4 chunks for web page 'Bachelor of Science in Information Science | Kuwait University' [scraper] Downloading PDF: https://www.ku.edu.kw/sites/default/files/202505/ISC%20Dependency%20Chart%20-%2015%20Feb%202025.pdf [scraper] Uploaded to storage: https://khkukmlqlueeiwmxyaki.supabase.co/storage/v1/object/public/uploads/pdfs/833f3dfc4780-495e-90eb-8b492b8233bd_ISC%20Dependency%20Chart%20-%2015%20Feb%202025.pdf Started parsing the file under job_id 5a037aff-278d-4d5f-a500-f511633b7bce [ingest] Raw classification response: {"major_id": 1830, "topic_name": " "} [ingest] Classified 'ISC Dependency Chart - 15 Feb 2025.pdf': college_id=18, major_id=1830, topic_id=5c0d7e40-3daa-4c51-8a07-f27a628c8d3e [ingest] Ingested 1 chunks for 'ISC Dependency Chart - 15 Feb 2025.pdf' [scraper] Downloading PDF: https://www.ku.edu.kw/sites/default/files/2025-05/ISC_Handbook2024.pdf [scraper] Uploaded to storage: https://khkukmlqlueeiwmxyaki.supabase.co/storage/v1/object/public/uploads/pdfs/ba22b63f5818-4879-9254-474ce37986e0_ISC_Handbook-2024.pdf Started parsing the file under job_id 1e620b9f-959c-4612-a3ea-d67fa9979eae [ingest] Raw classification response: {"major_id": 1830, "topic_name": " "} [ingest] Classified 'ISC_Handbook-2024.pdf': college_id=18, major_id=1830, topic_id=dba3965e-27d7-42d2-80ac-74a4b0b7ae57 [ingest] Ingested 30 chunks for 'ISC_Handbook-2024.pdf' [scraper] Source 3103bc4b-549a-47c3-936f-7c84eb01a7d4 marked as scraped.
+Figure 51: NT14 - Scraper Terminal Output Showing Ingestion and Auto-Classification
+pg. 91
+
+Figure 52: NT14 - Supabase Source and Document Tables Confirming Firecrawl Ingestion and AutoClassification
+Figure 53: NT15 - Supabase data_chunks Table Showing Chunk Metadata After Ingestion
+Figure 54: NT16 - RAG Retrieval Logs and Chatbot Response Confirming End-to-End Pipeline from Ingested Content
+pg. 92
+
+Security Testing
+
+TC-ID TC16
+TC17
+TC18
+
+Requirement Input Validation Input Validation Authentication
+
+NT17 Prompt Injection
+
+Description Query exceeding 1000 characters is rejected Empty query is rejected
+Admin route returns without token Query containing prompt injection attempt is handled safely
+
+NT18
+
+SQL Injection
+
+Query containing SQL injection pattern is handled safely
+
+Result
+
+Evidence
+
+Returns error message Figure 55
+
+Returns error message Figure 56
+
+Returns error message Figure 57
+
+System ignores injected instructions and returns a standard response or fallback message System returns a response without exposing or affecting the database
+
+Figure 58 Figure 59
+
+Figure 55: TC16- Long Query Rejected Figure 56: TC17- Empty Query Rejected pg. 93
+
+Figure 57: TC18 - Request without authorization token returns error Figure 58: NT17 - Prompt Injection Attempts Handled Safely
+Figure 59: NT18 -SQL Injection Attempts Handled Safely pg. 94
+
+Accessibility Testing TC-ID Description
+
+TC19
+
+Voice-to-text tested for English (en-US) input
+
+TC20
+
+High contrast mode verified on the student chat interface
+
+TC21
+
+Keyboard navigation tested using Tab key across all interactive elements
+
+Result
+
+Evidence
+
+Transcript appears correctly in the text input field upon recording completion
+
+Figure 60
+
+Chat interface remains fully readable with Figure 61 high contrast CSS applied
+
+All buttons, inputs, and links are reachable and focusable using Tab key only
+
+Figure 62
+
+Figure 60: TC19 - Recorded prompt using the voice button in English
+
+pg. 95
+
+Figure 61: TC20 - Student Chat Interface in High Contrast Mode
+
+Figure 62: TC21 - Keyboard Tab Navigation Highlighting the Settings Menu
+
+Specifications Implementation
+
+Backend Development
+The Daleel KU backend is built using Flask and serves as the core processing layer between the React frontend and the AI pipeline. It handles student queries, manages admin operations, and enforces security requirements.
+
+Technology Stack The following table lists the core technologies and libraries used in the backend implementation:
+
+Component Web framework Cross-origin resource sharing Rate limiting Environment configuration Database and authentication RAG pipeline
+
+Technology Flask Flask-CORS Flask-Limiter python-dotenv Supabase Python client LlamaIndex
+
+Version 3.1.3 6.0.2 4.1.1 1.2.2 2.28.3 0.14.20
+
+pg. 96
+
+Large language model API Parse Files
+
+OpenAI Python SDK LlamaParse
+
+2.30.0 0.6.94
+
+Implemented API Endpoints The backend API is divided into two groups of endpoints. The first group handles chat
+interface functionality and is accessible under /api. The second group handles administrative operations and is accessible under /api/admin.
+The following table lists all implemented endpoints:
+
+Method Endpoint
+
+Description
+
+Auth Required
+
+GET
+
+/
+
+Health check, confirms the
+
+No
+
+backend is running
+
+POST /api/session
+
+Creates a new anonymous chat No session and returns session_id
+
+PATCH /api/session/<session_id> POST /api/query
+
+POST /api/query/classify POST /api/query/complete
+
+POST /api/admin/login
+
+GET
+
+/api/admin/documents
+
+Ends a session by setting
+
+No
+
+ended_at
+
+Accepts a student question, routes No
+
+through RAG or GPA handler,
+
+logs interaction, returns response
+
+Classifies query type only, returns No query_type
+
+Processes a pre-classified query No through RAG or GPA handler directly
+
+Authenticates an admin via
+
+No
+
+Supabase Auth and returns a JWT
+
+access token
+
+Returns all document records
+
+Yes
+
+from the knowledge base
+
+POST /api/admin/documents
+
+Inserts a new document record Yes
+
+PUT
+
+/api/admin/documents/<doc_id> Updates an existing document Yes record by ID
+
+pg. 97
+
+DELETE /api/admin/documents/<doc_id> Deletes a document record, its Yes chunks, and its file from storage
+
+POST /api/admin/documents/upload Uploads a PDF to Supabase
+
+Yes
+
+Storage, creates a document
+
+record, and runs the ingestion
+
+pipeline
+
+GET
+
+/api/admin/colleges
+
+Returns all college records
+
+Yes
+
+GET
+
+/api/admin/topics
+
+Returns all topic records
+
+Yes
+
+GET
+
+/api/admin/queries
+
+Returns all user query logs
+
+Yes
+
+ordered by timestamp descending
+
+Configuration and Supabase Client Design All core settings and shared components including the OpenAI language model, the
+embedding model, and the database clients are initialized once in config.py and shared across the entire backend. This ensures consistency and avoids redundant initialization across files.
+
+Two separate Supabase clients are used. The first, supabase, uses the public anon key and is used only for verifying admin login tokens. The second, supabase_admin, uses the service role key and is used for all database operations such as reading and writing documents and query logs. This separation is necessary because the service role key bypasses Supabase's Row Level Security (RLS), which allows the backend to read and write to the database freely on the server side, while the anon key remains restricted as intended for client-facing authentication.
+
+File Structure The backend is organized into the following packages as shown:
+
+pg. 98
+
+RAG Pipeline
+The Daleel KU chatbot uses a Retrieval-Augmented Generation (RAG) pipeline to answer student questions. Before the pipeline is invoked, each query is classified as either a general academic question or a GPA estimation request and routed accordingly.
+Pipeline Flow A query passes through the following stages in sequence:
+1. Input Validation: Empty strings and queries exceeding 1,000 characters are rejected with a 400 error.
+2. Query Classification: The query is submitted to GPT-4o which returns either "gpa" or "general".
+3. Routing: GPA queries skip to Step 6; General queries continue to Step 4.
+4. Embedding and Retrieval: The student's question undergoes Arabic text normalization, which removes kashida (), a decorative elongation character, and diacritics (), short vowel markers, since their presence or absence in different texts causes the same word to produce inconsistent embeddings. Subscript digits are also normalized to standard digits. The normalized question is then embedded using text-embedding-3-small and compared against the pgvector knowledge base via similarity search. The top five most relevant chunks are retrieved, and duplicate chunks are removed to ensure each piece of content appears only once in the context. Optional metadata filters by college_id and topic_id can be applied to scope retrieval to a specific college or topic, allowing more targeted results when the query context warrants it.
+5. Context Assembly: Retrieved chunks are assembled into a context string labeled with source page numbers. Empty context triggers the fallback path, returning a bilingual fallback message.
+6. Response Generation: GPA queries are handled directly using the KU grade scale without retrieval. LaTeX notation present in the generated GPA response is stripped before the answer is returned to the client, ensuring the student receives clean readable text. General queries are passed to GPT-4o alongside the retrieved context and a grounding prompt that
+pg. 99
+
+enforces language mirroring, ensuring the response is generated in the same language as the student's question.
+
+7. JSON Parsing and Flag Assignment: GPT-4o returns {"was_answered": bool, "answer": str}. If parsing fails, the raw text is surfaced and was_answered defaults to false.
+
+8. Logging: The query, response, and was_answered flag are logged anonymously to Supabase. The session_id is included only if provided by the client. Logging failures do not block the response.
+
+9. Response Delivery: The final JSON payload containing response, was_answered, source_url, and source_name is returned with HTTP 200. Source metadata is included when context was successfully retrieved; the frontend determines whether to display it based on the was_answered flag.
+
+RAG Components The pipeline is implemented across five modules, with the IngestionPipeline, QueryEngine,
+and ResponseGenerator classes in the class diagram representing the three core logical components of the pipeline. The routes/chat.py implements the QueryProcessor logic that classifies and routes each query before the pipeline is invoked.
+
+File rag/ingest.py
+rag/classify.py rag/store.py
+
+Responsibility Entry point for all ingestion. Parses PDFs via LlamaParse with Arabic language support, caches parsed content to avoid redundant API calls, converts LlamaParse subscript digit artifacts to standard digits, and exposes the public ingestion API used by both admin uploads and the web scraper. LLM-based classification of documents and sources. Sends the first 3,000 characters of a document to GPT-4o to detect college, major, and topic. Operates in two modes: admin upload path (detects college and topic, no major assigned) and scraper path (college already known, detects major and topic within that college). Inserts new topic rows into the topic table on the fly if the returned topic name does not yet exist. Text cleaning, chunking, and pgvector persistence. Strips Arabic kashida and diacritics from each chunk before embedding, splits
+
+pg. 100
+
+content using SentenceSplitter with a chunk size of 768 tokens and overlap of 200 tokens, tags each chunk with college_id, major_id, topic_id, source_id, document_id, and file_name, and persists embeddings to Supabase pgvector via LlamaIndex. A single shared chunk_and_store() function is used by all three source types.
+
+rag/query_engine.py
+
+Implements the QueryEngine: embeds the student's normalized question, retrieves the top five matching chunks by cosine similarity, applies optional metadata filters by college_id and topic_id, deduplicates retrieved nodes, and walks results in relevance order to extract source attribution.
+
+rag/response.py routes/chat.py
+
+Implements the ResponseGenerator: builds the structured system prompt, calls GPT-4o, strips LaTeX notation from GPA responses, and returns the final answer with source citation or bilingual fallback. Classifies each query as "gpa" or "general" using a GPT-4o call before routing to the appropriate handler.
+
+Knowledge Base
+
+Data Sources The Daleel KU knowledge base is designed to ingest content from three different source types, as
+
+specified in the system design data ingestion architecture:
+
+1. Web Pages Content from official Kuwait University websites is crawled and extracted using Firecrawl. The number of pages crawled per source is controlled by the crawl_depth setting, which determines whether to crawl a single page, half of all discoverable URLs, or the full domain. If college_id is not pre-set on the source row, the first crawled page is sent to GPT-4o to auto-classify the college. PDF links discovered during the crawl are collected and processed through the same ingestion pipeline used for admin-uploaded PDFs. Staging mirror domains are filtered out before ingestion, and previously ingested pages are skipped to prevent duplicates.
+
+2. PDF Documents Official Kuwait University publications are extracted using LlamaParse, which was selected after PyMuPDF was found to corrupt Arabic decimal numbers in RTL PDFs. LlamaParse is called with Arabic language support enabled and parsed content is cached locally so unchanged PDFs are never re-parsed. Admin-uploaded PDFs are stored in Supabase Storage before ingestion, while
+
+pg. 101
+
+PDFs discovered during web crawls are downloaded, uploaded to storage, and cleaned up after processing.
+
+3. Social Media: Announcements and updates from official KU Instagram accounts are scraped using Apify. Up to 20 recent posts per account are collected. Each post image is sent to GPT-4o Vision for OCRbased text extraction, which is then merged with the post caption into a single content string before ingestion. No images are stored in the system.
+
+Vector Storage Embeddings are stored permanently in the Supabase chunk table using pgvector, allowing the
+knowledge base to grow incrementally as administrators add new documents without requiring a full rebuild on every restart. To reduce LlamaParse API calls, parsed document content is cached locally so LlamaParse is only called when new documents are added.
+
+Frontend Development
+The system is developed as a web application built with React and TypeScript. The frontend has two main parts: a student-facing chat interface that anyone can access without logging in, and an admin panel where authorized Kuwait University staff can manage the knowledge base and review student query logs. These interfaces have been implemented, and the application runs in the browser communicating with the Flask backend through API calls.
+
+Technology Stack
+Technology React TypeScript Vite Tailwind CSS
+
+Purpose UI component framework Static typing Development server and build tool Styling
+
+Version 18.3.1 5.8.3 5.4.19 3.4.17
+
+Application Routes
+
+Path /
+
+Component Landing
+
+/chat
+
+Index
+
+Description Animated splash screen, autoredirects to /chat Main student chat interface
+
+pg. 102
+
+/admin/login /admin /admin/queries /admin/queries/:id /admin/knowledge *
+
+AdminLogin AdminLayout  AdminDashboard AdminLayout  AdminQueries AdminLayout  AdminQueryDetail AdminLayout  AdminKnowledge NotFound
+
+Admin login form Admin dashboard with statistics Full query log view Individual query detail Knowledge base management 404 page
+
+All admin routes are wrapped in AdminLayout, which provides a shared sidebar and header across all admin pages.
+
+User Interface The student interface consists of a landing page and a chat page, both fully implemented and
+accessible. The landing page displays an animated splash screen that automatically navigates to the chat interface after approximately 2.2 seconds.
+
+Backend Integration
+
+When the chat page loads, it automatically creates a new session by calling POST /api/session on the Flask backend. The session ID returned is stored and attached to every message the student sends. When a student submits a message, the app sends it to POST /api/query and displays the response from the backend as the chatbot's reply.
+
+Admin Interface The admin panel has four pages. The full user interface for all four pages is complete and
+functional and connected to the backend, displaying live query logs and also allowing the admin to adjust the system's data sources.
+
+Admin Login The login page has an email and password form. Submitting the form calls POST /api/admin/login via Supabase Auth, which returns a real JWT access token stored by the frontend and attached as a Bearer token on every subsequent admin request.
+
+Dashboard (/admin) The dashboard gives the admin a quick overview of the system. Four cards at the top show the total number of documents, total queries received, how many were answered, and how many were referrals (where the chatbot could not find an answer). Below the cards, two tables show the five most recent queries and the three most recently added documents.
+
+pg. 103
+
+Query Logs (/admin/queries and /admin/queries/:id) The query logs page shows all student interactions grouped by session date. Each entry shows the question, the chatbot's response, whether it was answered or referred, and the timestamp. Admins can search queries by text and filter by status. An Export CSV button downloads all query data as a CSV file. Clicking any entry opens a detail page showing the full conversation in the correct language and text direction. The page loads data from GET /api/admin/queries, which is protected by admin authentication.
+Content Management (/admin/knowledge) The content management page shows all documents in the knowledge base in a searchable table. Admins can add new documents, edit existing ones, and delete documents using buttons on each row. All three operations are connected to real backend endpoints and protected by admin authentication. Adding a document calls POST /api/admin/documents for metadata entries or POST /api/admin/documents/upload for PDF files, which writes the document record and runs the ingestion pipeline. Editing calls PUT /api/admin/documents/<doc_id> to update the document record. Deleting calls DELETE /api/admin/documents/<doc_id>, which removes the document record, its associated chunks from the knowledge base, and the file from Supabase Storage.
+Database Implementation
+Supabase has been implemented as the system's database and authentication platform, providing a hosted PostgreSQL database, a built-in authentication service, and a file storage bucket. The database schema consists of nine tables covering three main areas: logging anonymous student interactions, managing admin content and oversight, and storing the RAG knowledge base. The storage bucket is used exclusively for PDF files. For admin-uploaded PDFs, the bucket serves as the primary storage and its public URL is used as the document source reference. For scraperingested PDFs, the bucket stores a backup copy while the original KU URL is retained as the source reference shown to students.
+Database Tables All nine tables have been created and verified in Supabase. The session and user_query tables
+are active and receiving real data, logging every student interaction, while the source, document, and data_chunks tables are populated through the scraper and ingestion pipeline. Admin authentication is handled through a profiles table linked to Supabase Auth, the knowledge base
+pg. 104
+
+chunks are stored in the data_chunks table which holds the text content, vector embeddings, and metadata required by the LlamaIndex retrieval pipeline, and the college and major tables include bilingual name fields to support Arabic and English content classification.
+
+Table session user_query
+profiles document topic source college
+major
+data_chunks
+
+Purpose Records each anonymous student chat session with start and end timestamps Logs every student query with the response, was_answered flag, and session link Stores admin account information linked to Supabase Auth for panel access Stores metadata for each knowledge base document added by an admin Reference table for topic categories used to classify documents and chunks Stores source URLs, type, scraping status, and classification metadata Reference table for KU college names in English and Arabic, used to scope content Reference table for KU majors with English and Arabic names and college association Stores text content, vector embedding, and metadata for each ingested document chunk
+
+The following SQL scripts define the complete database schema implemented in Supabase. Each
+table was created with all relationships and constraints preserved.
+-- Enable pgvector extension for vector embeddings CREATE EXTENSION IF NOT EXISTS vector;
+-- Table: college CREATE TABLE public.college (
+college_id integer NOT NULL, college_name text NOT NULL, college_name_ar text, CONSTRAINT college_pkey PRIMARY KEY (college_id) );
+-- Table: data_chunks (stores document chunks with vector embeddings) CREATE TABLE public.data_chunks (
+id bigint NOT NULL DEFAULT nextval('data_chunks_id_seq'::regclass), text character varying NOT NULL, metadata_ jsonb, node_id character varying, embedding vector, CONSTRAINT data_chunks_pkey PRIMARY KEY (id) );
+-- Table: document (metadata for ingested documents) CREATE TABLE public.document (
+document_id uuid NOT NULL DEFAULT gen_random_uuid(), title text NOT NULL,
+
+pg. 105
+
+source_url text UNIQUE, date_added timestamp without time zone DEFAULT now(), document_type text, admin_id uuid, source_id uuid, major_id integer, CONSTRAINT document_pkey PRIMARY KEY (document_id), CONSTRAINT document_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.source(source_id), CONSTRAINT document_major_id_fkey FOREIGN KEY (major_id) REFERENCES public.major(major_id), CONSTRAINT document_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES auth.users(id) );
+-- Table: major (academic majors by college) CREATE TABLE public.major (
+major_id integer NOT NULL, major_name text NOT NULL, college_id integer, major_name_ar text, major_code text, CONSTRAINT major_pkey PRIMARY KEY (major_id), CONSTRAINT major_college_id_fkey FOREIGN KEY (college_id) REFERENCES public.college(college_id) );
+-- Table: profiles (user profiles linked to auth.users) CREATE TABLE public.profiles (
+id uuid NOT NULL, email text, full_name text, created_at timestamp without time zone DEFAULT now(), CONSTRAINT profiles_pkey PRIMARY KEY (id), CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) );
+-- Table: session (chat sessions for anonymous users) CREATE TABLE public.session (
+session_id uuid NOT NULL DEFAULT gen_random_uuid(), started_at timestamp without time zone DEFAULT now(), ended_at timestamp without time zone, CONSTRAINT session_pkey PRIMARY KEY (session_id) );
+-- ENUM types for source table CREATE TYPE source_status AS ENUM ('pending', 'scraped', 'failed'); CREATE TYPE source_type_enum AS ENUM ('web', 'pdf', 'social'); CREATE TYPE crawl_depth AS ENUM ('page', 'site', 'none');
+-- Table: source (data sources for ingestion) CREATE TABLE public.source (
+source_id uuid NOT NULL DEFAULT gen_random_uuid(), source_name text NOT NULL, url text UNIQUE, status source_status DEFAULT 'pending', last_scraped timestamp without time zone, source_type source_type_enum DEFAULT 'web', college_id integer, major_id integer, crawl_depth crawl_depth DEFAULT 'page', crawl_limit integer, CONSTRAINT source_pkey PRIMARY KEY (source_id),
+pg. 106
+
+CONSTRAINT source_college_id_fkey FOREIGN KEY (college_id) REFERENCES public.college(college_id),
+CONSTRAINT source_major_id_fkey FOREIGN KEY (major_id) REFERENCES public.major(major_id) );
+-- Table: topic (content topics for categorization) CREATE TABLE public.topic (
+topic_id uuid NOT NULL DEFAULT gen_random_uuid(), topic_name text NOT NULL, CONSTRAINT topic_pkey PRIMARY KEY (topic_id) );
+-- Table: user_query (logs of student questions and responses) CREATE TABLE public.user_query (
+query_id uuid NOT NULL DEFAULT gen_random_uuid(), query_text text NOT NULL, response_text text, was_answered boolean DEFAULT true, created_at timestamp without time zone DEFAULT now(), session_id uuid, CONSTRAINT user_query_pkey PRIMARY KEY (query_id), CONSTRAINT user_query_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.session(session_id) );
+Code Correctness, Robustness, and Security
+Input Validation
+All student queries pass through a validation function before any processing takes place. This
+ensures that invalid inputs are rejected immediately, before they reach the AI pipeline or consume
+any API credits as OpenAI charges based on the number of words and characters sent in each
+request. Without a limit, a single unusually long query could consume a disproportionate amount
+of API credits. Therefore, two checks are applied:
+Check 1 Empty Input: Queries that are empty or contain only whitespace are rejected. This
+prevents meaningless requests from reaching the query classification step and the OpenAI API.
+Check 2 Length Limit: Queries exceeding 1,000 characters are rejected.
+The validation logic is implemented in validate_query() in routes/chat.py:
+MAX_QUERY_LENGTH = 1000 # characters
+# Validates the student query before processing def validate_query(text):
+# Reject empty or whitespace-only input if not text or not text.strip():
+pg. 107
+
+return False, "Query can't be empty."
+# Reject queries exceeding the character limit to prevent prompt injection if len(text) > MAX_QUERY_LENGTH:
+return False, f"Query is too long. Maximum allowed length is {MAX_QUERY_LENGTH} characters."
+return True, None
+If either check fails, the route immediately returns HTTP 400 with a descriptive error message and no further processing occurs:
+is_valid, error_message = validate_query(query_text) if not is_valid:
+return jsonify({"error": error_message}), 400
+Error Handling
+The system is designed to handle failures such that when something goes wrong internally, the student still receives an appropriate response and is never shown a raw technical error.
+Classification Failure Fallback When classifying a query as GPA-related or general, the system calls GPT-4o with a short
+classification prompt. If this call fails for any reason such as a network timeout or API error, the system does not raise an exception. Instead, it silently defaults to the general query type and continues processing normally. This ensures that a classification failure never blocks the student from receiving a response:
+except Exception as e: print(f"Warning: detect_query_type failed, defaulting to 'general' -- {e}") return "general"
+Logging Failures Do Not Block Responses After a response is generated, the system attempts to log the query and response to Supabase. This database write is wrapped in a try/except block so that a logging failure whether caused by a network error, a Supabase outage, or a schema mismatch never prevents the student from receiving their answer:
+try: supabase_admin.table("user_query").insert(log_entry).execute()
+pg. 108
+
+except Exception as e: # Logging failure must not block the student from receiving their response
+print(f"Warning: failed to log query to Supabase - {e}")
+return jsonify({ "response": response_text, "was_answered": was_answered, "source_url": source_url, "source_name": source_name,
+}), 200
+The return statement is placed outside the try/except block, meaning the response is always sent regardless of whether logging succeeded. The error is printed server-side so it remains visible in application logs without being shown to the student.
+Fallback Response If the system cannot find a relevant answer, it returns a clear, pre-written message in the student's language directing them to contact the appropriate Kuwait University department. This is handled at two levels:
+Level 1: No chunks retrieved If the vector search returns no relevant chunks, the system skips the GPT-4o call entirely and immediately returns the bilingual fallback message without consuming any API credits:
+if not context or not context.strip(): # Returns fallback if context is empty fallback_text = f"{FALLBACK_EN}\n\n{FALLBACK_AR}" return {"answer": fallback_text, "was_answered": False, "source_url": None,
+"source_name": None}
+Level 2: Chunks retrieved but insufficient If chunks are retrieved but GPT-4o determines they do not contain enough information to answer the question, the system prompt instructs the model to use the exact fallback text in the student's language:
+If the context does NOT contain enough information to answer the question, set was_answered to false and use the exact fallback text specified below, do not add extra explanation.
+The fallback messages are defined as:
+FALLBACK_EN = (
+pg. 109
+
+"I could not find sufficient information about this topic " "in the available sources. Please refer to the official " "academic guide or contact academic advising." ) FALLBACK_AR = ( "         . " "         ." )
+Global Error Handlers By default, Flask returns HTML error pages when something goes wrong. Since the Daleel KU backend is an API consumed by a React frontend, HTML responses are not useful as the frontend expects JSON. Therefore, three global error handlers are defined in app.py to ensure that any error always returns a clean JSON response:
+@app.errorhandler(404) def not_found(e):
+return jsonify({"error": "Endpoint not found"}), 404 @app.errorhandler(429) def rate_limit_exceeded(e):
+return jsonify({"error": "Too many requests. Please wait a moment."}), 429 @app.errorhandler(500) def internal_error(e):
+return jsonify({"error": "An internal server error occurred."}), 500
+This ensures that any unexpected condition like a missing route, a triggered rate limit, or an unhandled exception returns a response the frontend can handle instead of crashing or displaying a raw HTML error page.
+Security Measures
+The following security measures are implemented in the backend, consistent with the security strategy defined in the system design.
+Rate Limiting A rate limit of 30 requests per minute per IP address is applied to all public-facing query endpoints that trigger paid API calls: POST /api/query, /api/query/classify, and /api/query/complete:
+@chat_bp.route("/query", methods=["POST"]) @limiter.limit("30 per minute")
+@chat_bp.route("/query/classify", methods=["POST"])
+pg. 110
+
+@limiter.limit("30 per minute")
+@chat_bp.route("/query/complete", methods=["POST"]) @limiter.limit("30 per minute")
+Admin Route Protection All admin routes except /api/admin/login are protected by the require_auth decorator. When an admin logs in successfully, Supabase Auth issues a JWT token that is stored by the frontend and included in every subsequent admin request. The require_auth decorator checks this token on every protected request if the token is missing, expired or invalid, the request is rejected immediately with a 401 Unauthorized response, and the route is never reached.
+This ensures that knowledge base management and query log access are restricted exclusively to authenticated Kuwait University staff.
+def decorated(*args, **kwargs): auth_header = request.headers.get("Authorization", "")
+if not auth_header.startswith("Bearer "): return jsonify({"error":"Missing or invalid Authorization header"}), 401
+# missing or malformed header # Strip "Bearer " prefix to get the raw token token = auth_header[len("Bearer "):] try: payload = verify_token(token)
+except Exception as e: return jsonify({"error": f"Token verification failed: {str(e)}"}), 401 #
+# invalid or expired token
+# Make the verified user available to the route handler request.admin_payload = payload return f(*args, **kwargs)
+Supabase Clients Two separate Supabase clients are initialized in config.py with different keys:
+supabase=create_client(SUPABASE_URL, SUPABASE_KEY)# anon key supabase_admin=create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)#service role key
+· The supabase client uses the anon key and is used only for authentication operations such as verifying tokens.
+· The supabase_admin client uses the service role key and is used for all direct database table reads and writes.
+pg. 111
+
+This separation is necessary for Row Level Security (RLS) compatibility, the anon key is subject to RLS policies while the service role key bypasses RLS on the server side. Since all database operations originate from the controlled backend environment, it is safe to use the service key for data access while keeping the anon key scoped to authentication only.
+Cross-Origin Resource Sharing (CORS) Restriction Cross-origin requests to the backend are restricted to a single allowed origin, configured through the environment variable at startup:
+CORS(app, origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")])
+This implies that only requests originating from the configured frontend URL are permitted. All other origins are blocked at the CORS layer before reaching any route handler.
+SQL Injection Prevention All database operations use the Supabase client's built-in query builder methods such as
+.select(), .insert(), .update(), and .eq(). These methods use parameterized queries internally, meaning user input is never concatenated directly into a SQL string. This eliminates the risk of SQL injection across all database interactions in the system.
+Prompt Injection Prevention Prompt injection occurs when a user crafts input designed to override or manipulate the system
+instructions sent to the LLM. Two measures are in place to mitigate this:
+1. The 1,000 character limit applied in validate_query() restricts the size of any injected payload before it reaches the AI pipeline.
+2. The system prompt and user input are passed as structurally separate messages in the OpenAI API call using distinct roles:
+messages = [ ChatMessage(role="system", content=GPA_SYSTEM_PROMPT), *history, ChatMessage(role="user", content=query),
+]
+Because the system instructions and the user message occupy separate roles in the API call, user input cannot override or escape the system prompt regardless of its content.
+pg. 112
+
+Input Sanitization A shared sanitize_text() utility defined in utils/sanitize.py is applied to all user-supplied text
+before it is processed. It strips null bytes, removes control characters, and normalizes Unicode to its canonical form, preventing malformed or malicious character sequences from reaching the database or the AI pipeline:
+def sanitize_text(text: str) -> str: text = text.replace("\x00", "") text = "".join( ch for ch in text if ch in ("\n", "\r", "\t") or not
+unicodedata.category(ch).startswith("C") ) text = unicodedata.normalize("NFC", text) return text.strip()
+The function is applied consistently across all entry points that accept user input. For example, the admin login route sanitizes the email field before passing it to Supabase Auth:
+email = sanitize_text(data.get("email", ""))
+System Documentation
+In-Code Documentation
+All source files include in-code documentation by following a consistent commenting convention applied at three levels described below:
+Function level: Each function is preceded by a single-line comment describing its role or its inputto-output relationship.
+Import level: Comments are added only when the role of a library is not clear from its name alone and omitted for standard or self-explanatory imports.
+Inline level: Comments are added inside functions only where a specific value, behavior, or side effect would not be immediately obvious to a reader. Comments never restate what the code already expresses. This convention is applied consistently across both the backend and frontend source files.
+pg. 113
+
+Example 1: auth/jwt.py (Authentication):
+from functools import wraps # decorator metadata preservation from flask import request, jsonify # request parsing, JSON responses from config import supabase # Supabase client
+# Verifies a JWT token via Supabase Auth and returns the user object def verify_token(token: str) -> dict:
+response = supabase.auth.get_user(token) return response.user
+# Flask decorator that protects admin routes def require_auth(f):
+@wraps(f)
+# Checks the Bearer token and attaches the verified user to the request def decorated(*args, **kwargs):
+auth_header = request.headers.get("Authorization", "")
+if not auth_header.startswith("Bearer "): return jsonify({"error": "Missing or invalid Authorization header"}),
+401 # missing or malformed header
+# Strip prefix to get the raw token token = auth_header[len("Bearer "):] try:
+payload = verify_token(token) except Exception as e:
+return jsonify({"error": f"Token verification failed: {str(e)}"}), 401 # invalid or expired token
+# Make the verified user available to the route handler request.admin_payload = payload return f(*args, **kwargs) return decorated
+Example 2: Landing.tsx (Frontend - User Intro Screen):
+import { useEffect, useState } from "react"; import { useNavigate } from "react-router-dom"; import AcademicBotLogo from "@/components/AcademicBotLogo";
+// Splash screen that fades out and navigates to /chat automatically const Landing = () => {
+const navigate = useNavigate(); const [fading, setFading] = useState(false);
+pg. 114
+
+useEffect(() => { // Start fading out after 1700ms const fadeTimer = setTimeout(() => { setFading(true); }, 1700); // Navigate after fade completes (500ms) const navTimer = setTimeout(() => { navigate("/chat"); }, 2210); // Cancels both timers if the user navigates away before the intro finishes return () => { clearTimeout(fadeTimer); clearTimeout(navTimer); };
+}, [navigate]); // JSX return omitted for brevity }; export default Landing;
+External Documentation
+External documentation for the Daleel KU system is provided through a README.md file accessible via the project repository. The README serves as the primary reference for setting up and understanding the system, covering the project overview, folder structure, prerequisites, stepby-step instructions for running both the backend and frontend, all required environment variables, the system workflow, database design, security measures, and the complete API reference for all endpoints.
+Source Code Repository
+The complete project source code is publicly accessible on GitHub at: daleel-ku. The repository includes the full backend, frontend, environment variable template, and README.md file for setup instructions.
+Current Limitations
+The system is functional, but several limitations remain at this stage of development:
+pg. 115
+
+· LlamaParse subscript digits: LlamaParse outputs subscript Unicode digits () instead of standard digits. This is resolved through a post-processing normalization step in ingest.py but may require monitoring if new document formats are added.
+· No automated content updates: While the web scraper (Firecrawl) and social media scraper (Apify) are fully implemented and operational, web content ingestion is triggered manually by an authorized administrator through the admin panel. Social media sources (Instagram) are automatically re-scraped on a weekly schedule using APScheduler, which detects and ingests only new posts while skipping previously processed content. Extending automated scheduling to web sources was considered out of scope for the current implementation and is planned as a future enhancement.
+· Cross-lingual retrieval accuracy: The vector search performs best when the query language matches the document language. When a student submits a query in one language (example: English) against documents stored in another (example: Arabic), the semantic similarity scores are lower, reducing retrieval accuracy. This is a characteristic of the textembedding-3-small model used for vectorization. The effect is more pronounced for shortform content such as social media posts, while longer structured documents are retrieved more reliably across languages.
+pg. 116
+
+(6)
+Conclusion & Supporting Materials
+
+Conclusion
+This project addressed a well-documented challenge faced by Kuwait University students: the fragmentation of academic and administrative information across multiple platforms, leading to reliance on informal channels and repetitive inquiries to staff. The result is Daleel KU, a bilingual AI-enabled academic chatbot that provides students with accurate, centralized access to university information without requiring login or registration.
+The system delivers a RAG-based conversational interface grounded in verified official KU sources, with bilingual support in Arabic and English, GPA estimation, source-transparent responses, automated content ingestion from websites, PDFs, and social media, along with an administrative control panel for knowledge base management and query log oversight.
+While current limitations exist, these present clear directions for future work, including automated web content scheduling, improved cross-lingual retrieval through multilingual embedding models, and expansion of the knowledge base to additional Kuwait University colleges beyond CLS. Daleel KU shows that a reliable, bilingual, and institutionally governed academic assistant can be built within a semester timeline and provides a replicable model for other universities across Kuwait and the broader Gulf region.
+pg. 118
+
+References
+[1] Y. Alsaad and S. Alajmi, "AUK Admission Enquiry Chatbot," Capstone Project, Bachelor of Science in Information Science, College of Engineering and Applied Sciences, American University of Kuwait, Kuwait, Fall 2024. [Online]. Available: https://dspace.auk.edu.kw/server/api/core/bitstreams/f2109773-70bc-4b98-97d08167e99c3988/content
+[2] E. Omran and Y. Abu Shaaban, "FalconAI: A Custom AI University Chatbot Using the ChatGPT API," Gulf University of Science and Technology (GUST), Kuwait, D-Publication, 2024. [Online]. Available: https://www.dpublication.com/wp-content/uploads/2024/06/041784.pdf
+[3] Kuwait University, "Research Sector Projects Unit (RSPU) Chatbot," Kuwait University, Kuwait. [Online]. Available: https://rspu.ku.edu.kw/contact-us. [Accessed: April 30, 2026].
+[4] S. A. Altabtabai, Z. Noorain, Y. Dallol, and F. Al-Jenfawi, "IT Support AI-Based Virtual Assistant Chatbot (AUKbot)," Capstone Project, Bachelor of Science in Computer Science/Information Systems, College of Engineering and Applied Sciences, American University of Kuwait, Kuwait, May 2024. [Online]. Available: https://dspace.auk.edu.kw/server/api/core/bitstreams/9e48f412-8646-455c-9055cdce6c68c5ed/content
+pg. 119
+
+Appendices
+Appendix A: Survey Questions and Results
+pg. 120
+
+pg. 121
+
+pg. 122
+
+pg. 123
+
+pg. 124
+
+pg. 125
+
+pg. 126
+
+

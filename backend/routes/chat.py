@@ -25,6 +25,9 @@ MAX_QUERY_LENGTH = 1000
 GPA_DISCLAIMER_AR = "هذا تقدير للمعدل لأغراض المرجعية فقط. يرجى التحقق من سجلك الأكاديمي الرسمي."
 GPA_DISCLAIMER_EN = "This is an estimated GPA for reference only. Please verify with your official academic record."
 
+GREETING_AR = "مرحباً! أنا دليل، المساعد الأكاديمي لجامعة الكويت. كيف أقدر أساعدك؟"
+GREETING_EN = "Hello! I'm Daleel, Kuwait University's academic assistant. How can I help you?"
+
 _latex_converter = LatexNodes2Text()
 
 
@@ -65,10 +68,11 @@ def _parse_and_validate(data) -> tuple[str | None, tuple | None]:
 def detect_query_type(text):
     classification_prompt = (
         "You are a query classifier for a Kuwait University academic chatbot. "
-        "Classify the following student query into exactly one of two categories:\n"
+        "Classify the following student query into exactly one of three categories:\n"
         "- gpa       : the student is asking to calculate or estimate their GPA\n"
+        "- greeting  : the student is sending a greeting, small talk, or non-academic message (e.g. hello, hi, how are you, مرحبا, السلام عليكم)\n"
         "- general   : the student is asking any other academic question\n\n"
-        "Reply with one word only: gpa or general. Do not explain."
+        "Reply with one word only: gpa, greeting, or general. Do not explain."
     )
 
     try:
@@ -82,7 +86,9 @@ def detect_query_type(text):
             temperature=0,
         )
         label = result.choices[0].message.content.strip().lower()
-        return "gpa" if label == "gpa" else "general"
+        if label in ("gpa", "greeting"):
+            return label
+        return "general"
 
     except Exception as e:
         print(f"Warning: detect_query_type failed, defaulting to 'general' — {e}")
@@ -97,7 +103,10 @@ def _process_and_respond(query_text, session_id, query_type):
             session_memories[session_id] = ChatMemoryBuffer.from_defaults(token_limit=3000)
         memory = session_memories[session_id]
 
-    if query_type == "gpa":
+    if query_type == "greeting":
+        is_arabic = any('؀' <= ch <= 'ۿ' for ch in query_text)
+        result = {"answer": GREETING_AR if is_arabic else GREETING_EN, "was_answered": True, "sources": []}
+    elif query_type == "gpa":
         result = handle_gpa_query(query_text, memory=memory)
         result["answer"] = format_gpa_response(result["answer"], query_text)
     else:
@@ -174,7 +183,7 @@ def query_complete():
     session_id = (data or {}).get("session_id")
     query_type = (data or {}).get("query_type", "general")
     # 2) Guard against unexpected query_type values from the client
-    if query_type not in ("gpa", "general"):
+    if query_type not in ("gpa", "general", "greeting"):
         return jsonify({"error": "query_type must be 'gpa' or 'general'."}), 400
     # 3) Process and return
     return _process_and_respond(query_text, session_id, query_type)
