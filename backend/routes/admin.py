@@ -316,6 +316,8 @@ def update_source(source_id):
 
     allowed = {"source_name", "url", "source_type", "crawl_depth", "status"}
     update = {k: v for k, v in data.items() if k in allowed}
+    if update.get("status") == "pending":
+        update["crawl_limit"] = None
     if not update:
         return jsonify({"error": "No valid fields provided"}), 400
 
