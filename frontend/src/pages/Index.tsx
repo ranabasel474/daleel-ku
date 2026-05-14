@@ -82,18 +82,19 @@ const Index = () => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
 
-  //Ensures the session is closed on page unload to allow proper logging of session duration and queries.
+  //Ensures the session is closed when the tab is hidden or closed.
   useEffect(() => {
     const endSession = () => {
-      const id = sessionIdRef.current;
-      if (!id) return;
-      navigator.sendBeacon(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session/${id}`);
+      if (document.visibilityState === 'hidden') {
+        const id = sessionIdRef.current;
+        if (!id) return;
+        navigator.sendBeacon(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/session/${id}`);
+      }
     };
 
-    window.addEventListener('beforeunload', endSession);
+    document.addEventListener('visibilitychange', endSession);
     return () => {
-      window.removeEventListener('beforeunload', endSession);
-      endSession();
+      document.removeEventListener('visibilitychange', endSession);
     };
   }, []);
 
