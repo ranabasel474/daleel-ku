@@ -106,3 +106,30 @@ export function useTriggerScrape() {
     mutationFn: () => api.post<{ message: string }>('/api/admin/scrape', {}),
   });
 }
+
+export function useUpdateSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ApiSource> }) =>
+      api.put<{ source: ApiSource }>(`/api/admin/sources/${id}`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
+
+export function useSources() {
+  return useQuery<ApiSource[]>({
+    queryKey: ['sources'],
+    queryFn: async () => {
+      const res = await api.get<{ sources: ApiSource[] }>('/api/admin/sources');
+      return res.sources;
+    },
+  });
+}
+
+export function useDeleteSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ message: string }>(`/api/admin/sources/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
