@@ -3,7 +3,20 @@ from llama_index.core import VectorStoreIndex
 from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterCondition
 from config import supabase_admin
 
-TOP_K = 5  # number of chunks passed to the LLM
+RETRIEVE_K = 10  # candidate pool fetched from pgvector before boosting/reranking
+TOP_K      = 5   # maximum chunks passed to the LLM after boosting and filtering
+
+MIN_SCORE = 0.40   # chunks below this threshold are dropped as irrelevant
+MIN_KEEP  = 2      # always keep at least this many chunks regardless of score
+
+# Score multipliers by document type — higher = more trusted source
+_BOOST = {
+    "text":      1.15,  # curated .md files
+    "web":       1.05,  # scraped web pages
+    "pdf":       1.00,  # PDF extractions (baseline)
+    "instagram": 0.95,  # social media OCR
+    "x":         0.95,  # social media OCR
+}
 
 # Arabic normalization pattern.
 _ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")
@@ -12,6 +25,18 @@ _ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")
 # Strips Arabic kashida and diacritic characters to improve retrieval accuracy
 def _clean_arabic(text: str) -> str:
     return _ARABIC_NOISE.sub("", text)
+
+
+# Applies source-type boost, re-sorts, and drops low-scoring chunks
+def _boost_and_filter(nodes):
+    for node in nodes:
+        doc_type = (node.metadata or {}).get("document_type", "pdf")
+        node.score = (node.score or 0.0) * _BOOST.get(doc_type, 1.0)
+    nodes.sort(key=lambda n: n.score, reverse=True)
+    filtered = [n for n in nodes if n.score >= MIN_SCORE]
+    if len(filtered) < MIN_KEEP:
+        filtered = nodes[:MIN_KEEP]
+    return filtered[:TOP_K]
 
 
 # Formats retrieved nodes as labeled, page-referenced blocks for the LLM prompt
@@ -41,7 +66,7 @@ def search_query(
 
     filters = MetadataFilters(filters=filter_list, condition=FilterCondition.AND) if filter_list else None
 
-    retriever = index.as_retriever(similarity_top_k=TOP_K, filters=filters)
+    retriever = index.as_retriever(similarity_top_k=RETRIEVE_K, filters=filters)
     raw_nodes = retriever.retrieve(clean_question)
 
     # Deduplicate nodes by id
@@ -53,13 +78,16 @@ def search_query(
             seen.add(key)
             nodes.append(n)
 
+    nodes = _boost_and_filter(nodes)
+
     print(f"[retrieval] query: {repr(question[:80])}")
     print(f"[retrieval] hits: {len(nodes)}")
 
     for i, n in enumerate(nodes, 1):
         meta = n.metadata or {}
         page = meta.get("page_label") or meta.get("page") or meta.get("source") or "?"
-        print(f"  [{i}] score={n.score:.3f} page={page} | {n.get_content()[:200]}")
+        doc_type = meta.get("document_type", "?")
+        print(f"  [{i}] score={n.score:.3f} type={doc_type} page={page} | {n.get_content()[:200]}")
 
     if not nodes:
         return {"context": "", "sources": []}

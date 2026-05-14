@@ -239,6 +239,7 @@ def _handle_post(
             major_id=classification["major_id"],
             topic_id=classification["topic_id"],
             file_name=title,
+            document_type=platform,
         )
     except Exception as exc:
         print(f"[social] Failed to ingest post {post_url}: {exc}")

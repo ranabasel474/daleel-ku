@@ -116,6 +116,7 @@ def ingest_document(
         major_id=classification["major_id"],
         topic_id=classification["topic_id"],
         file_name=file_name,
+        document_type="pdf",
     )
     print(f"[ingest] Ingested {chunk_count} chunks for '{file_name}'")
     return chunk_count, classification["major_id"]

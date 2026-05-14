@@ -116,6 +116,7 @@ def _handle_web_page(
             major_id=classification["major_id"],
             topic_id=classification["topic_id"],
             file_name=title or page_url,
+            document_type="web",
         )
         print(f"[scraper] Ingested {count} chunks for web page '{title}'")
     except Exception as exc:

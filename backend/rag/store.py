@@ -34,6 +34,7 @@ def chunk_and_store(
     major_id: int | None,
     topic_id: int | None,
     file_name: str,
+    document_type: str = "pdf",
 ) -> int:
     doc = Document(text=text, metadata={"file_name": file_name})
     nodes = SPLITTER.get_nodes_from_documents([doc])
@@ -46,7 +47,8 @@ def chunk_and_store(
         node.metadata["db_document_id"] = document_id
         node.metadata["document_id"]    = document_id
         node.metadata["file_name"]      = file_name
-        node.excluded_llm_metadata_keys = UUID_METADATA_KEYS + ["db_document_id"]  # db_document_id duplicates document_id under a different key
+        node.metadata["document_type"]  = document_type
+        node.excluded_llm_metadata_keys = UUID_METADATA_KEYS + ["db_document_id"]
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     VectorStoreIndex(nodes, storage_context=storage_context)
     return len(nodes)
