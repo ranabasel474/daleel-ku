@@ -31,6 +31,7 @@ const translations = {
     youSaid: 'You said:',
     botLogoAlt: 'Daleel KU bot',
     typingAriaLabel: 'Daleel KU is typing',
+    disclaimer: 'Never share personal information.',
 
     // Admin - Layout
     adminPanel: 'Admin Panel',
@@ -160,6 +161,7 @@ const translations = {
     youSaid: 'قلت:',
     botLogoAlt: 'بوت DALEEL KU',
     typingAriaLabel: 'DALEEL KU يكتب',
+    disclaimer: 'لا تشارك معلوماتك الشخصية أبدًا.',
 
     // Admin - Layout
     adminPanel: 'لوحة الإدارة',

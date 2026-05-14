@@ -5,6 +5,7 @@ import ChatInput from '@/components/ChatInput';
 import TypingIndicator from '@/components/TypingIndicator';
 import ChatDrawer from '@/components/ChatDrawer';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowDown } from 'lucide-react';
 
 interface Message {
@@ -18,6 +19,7 @@ interface Message {
 //Renders the main chat page and coordinates session lifecycle plus message flow.
 const Index = () => {
   const { t, isRTL } = useLanguage();
+  const isMobile = useIsMobile();
 
   //Builds the initial chat state with a welcome message.
   const getInitialMessages = (): Message[] => [
@@ -287,6 +289,11 @@ const Index = () => {
               );
             })}
             {isTyping && <TypingIndicator statusMessage={statusMessage} />}
+            {isMobile && (
+              <p className="text-xs italic text-muted-foreground/60 px-4 md:px-6 py-2">
+                {t.disclaimer}
+              </p>
+            )}
           </div>
 
           {showScrollBtn && (
@@ -301,6 +308,11 @@ const Index = () => {
         </main>
 
         <ChatInput onSend={handleSend} disabled={isTyping} />
+        {!isMobile && (
+          <p className="text-center text-xs italic text-muted-foreground/60 py-1.5">
+            {t.disclaimer}
+          </p>
+        )}
       </div>
     </div>
   );
