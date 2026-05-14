@@ -326,13 +326,50 @@ def update_source(source_id):
         return jsonify({"error": str(e)}), 500
 
 
-# Deletes a source row by ID
+# Deletes a source, its documents, their chunks, and any storage files
 @admin_bp.route("/sources/<source_id>", methods=["DELETE"])
 @require_auth
 def delete_source(source_id):
     try:
+        # 1. Find all documents belonging to this source
+        doc_response = supabase_admin.table("document").select("document_id, source_url").eq("source_id", source_id).execute()
+        documents = doc_response.data or []
+        total_chunks_deleted = 0
+
+        for doc in documents:
+            doc_id = doc["document_id"]
+
+            # 2. Delete chunks from data_chunks where metadata_ contains this document_id
+            all_chunks = supabase_admin.table("data_chunks").select("id, metadata_").execute().data or []
+            chunk_ids = [
+                c["id"] for c in all_chunks
+                if (c.get("metadata_") or {}).get("db_document_id") == doc_id
+            ]
+            if chunk_ids:
+                supabase_admin.table("data_chunks").delete().in_("id", chunk_ids).execute()
+                total_chunks_deleted += len(chunk_ids)
+
+            # 3. Delete file from storage if it's a storage:// reference
+            source_url = doc.get("source_url")
+            if source_url and source_url.startswith("storage://uploads/"):
+                storage_path = source_url.replace("storage://uploads/", "")
+                try:
+                    supabase_admin.storage.from_("uploads").remove([storage_path])
+                except Exception:
+                    pass
+
+        # 4. Delete all documents belonging to this source
+        if documents:
+            supabase_admin.table("document").delete().eq("source_id", source_id).execute()
+
+        # 5. Delete the source itself
         supabase_admin.table("source").delete().eq("source_id", source_id).execute()
-        return jsonify({"message": "Source deleted"}), 200
+
+        return jsonify({
+            "message": "Source and all related data deleted",
+            "documents_deleted": len(documents),
+            "chunks_deleted": total_chunks_deleted,
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
