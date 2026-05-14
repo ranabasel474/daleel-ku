@@ -149,7 +149,9 @@ def _handle_pdf(
             tmp.write(resp.content)
             tmp_path = tmp.name
 
-        storage_key = f"pdfs/{uuid.uuid4()}_{filename}"
+        safe_filename = re.sub(r"[^\x00-\x7F]", "", filename).strip()
+        safe_filename = re.sub(r"[^\w\-.]", "_", safe_filename) or "file.pdf"
+        storage_key = f"pdfs/{uuid.uuid4()}_{safe_filename}"
         supabase_admin.storage.from_("uploads").upload(
             storage_key,
             resp.content,

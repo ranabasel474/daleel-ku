@@ -37,9 +37,10 @@ const docTypes = ['PDF', 'web', 'instagram', 'text'];
 const emptyForm = { title: '', type: 'PDF', college: '', topic: '', sourceUrl: '' };
 
 const statusBadgeVariant = (status: ApiSource['status']) => {
-  if (status === 'scraped') return 'default';
-  if (status === 'failed') return 'destructive';
-  return 'secondary';
+  if (status === 'active' || status === 'scraped') return 'default';
+  if (status === 'error' || status === 'failed') return 'destructive';
+  if (status === 'hold') return 'outline';
+  return 'secondary'; // pending
 };
 
 const AdminKnowledge = () => {
@@ -721,6 +722,7 @@ const AdminKnowledge = () => {
                   <SelectContent>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="hold">Hold</SelectItem>
                     <SelectItem value="error">Error</SelectItem>
                   </SelectContent>
                 </Select>

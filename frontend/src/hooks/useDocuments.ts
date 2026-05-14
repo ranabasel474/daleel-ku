@@ -123,6 +123,11 @@ export function useSources() {
       const res = await api.get<{ sources: ApiSource[] }>('/api/admin/sources');
       return res.sources;
     },
+    refetchInterval: (query) => {
+      const sources = query.state.data;
+      const hasPending = sources?.some(s => s.status === 'pending');
+      return hasPending ? 5000 : false;
+    },
   });
 }
 
