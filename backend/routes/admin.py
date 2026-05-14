@@ -306,6 +306,37 @@ def add_source():
         return jsonify({"error": error_msg}), 500
 
 
+# Updates editable fields on a source row
+@admin_bp.route("/sources/<source_id>", methods=["PUT"])
+@require_auth
+def update_source(source_id):
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
+    allowed = {"source_name", "url", "source_type", "crawl_depth", "status"}
+    update = {k: v for k, v in data.items() if k in allowed}
+    if not update:
+        return jsonify({"error": "No valid fields provided"}), 400
+
+    try:
+        response = supabase_admin.table("source").update(update).eq("source_id", source_id).execute()
+        return jsonify({"source": response.data[0]}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Deletes a source row by ID
+@admin_bp.route("/sources/<source_id>", methods=["DELETE"])
+@require_auth
+def delete_source(source_id):
+    try:
+        supabase_admin.table("source").delete().eq("source_id", source_id).execute()
+        return jsonify({"message": "Source deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # Triggers scraping of all pending sources in a background thread
 @admin_bp.route("/scrape", methods=["POST"])
 @require_auth
