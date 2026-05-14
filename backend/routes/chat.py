@@ -205,7 +205,7 @@ def create_session():
 
 
 # Sets ended_at on the session row and clears the in-memory conversation buffer
-@chat_bp.route("/session/<session_id>", methods=["PATCH"])
+@chat_bp.route("/session/<session_id>", methods=["PATCH", "POST"])
 def end_session(session_id):
     try:
         supabase_admin.table("session").update({
