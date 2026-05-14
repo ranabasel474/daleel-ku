@@ -309,9 +309,9 @@ const Index = () => {
 
         <ChatInput onSend={handleSend} disabled={isTyping} />
         {!isMobile && (
-          <p className="text-center text-xs italic text-muted-foreground/60 py-1.5">
-            {t.disclaimer}
-          </p>
+          <div className="max-w-3xl mx-auto w-full px-4 md:px-6 py-1.5">
+            <p className="text-xs italic text-muted-foreground/60">{t.disclaimer}</p>
+          </div>
         )}
       </div>
     </div>
