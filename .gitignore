@@ -221,3 +221,8 @@ output.txt
 # Claude AI
 .claude/
 .claudeignore
+
+# Frontend source — the generic Python `lib/` rule above also matches
+# frontend/src/lib, which holds required build files (utils.ts, api.ts, etc.)
+!frontend/src/lib/
+!frontend/src/lib/**
