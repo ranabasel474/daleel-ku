@@ -6,6 +6,7 @@ import TypingIndicator from '@/components/TypingIndicator';
 import ChatDrawer from '@/components/ChatDrawer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useViewportHeight } from '@/hooks/use-viewport-height';
 import { ArrowDown } from 'lucide-react';
 
 interface Message {
@@ -20,6 +21,7 @@ interface Message {
 const Index = () => {
   const { t, isRTL } = useLanguage();
   const isMobile = useIsMobile();
+  useViewportHeight();
 
   //Builds the initial chat state with a welcome message.
   const getInitialMessages = (): Message[] => [
@@ -330,8 +332,15 @@ const Index = () => {
   };
 
   return (
-    <div className="h-dvh w-full bg-chat-bg font-arabic" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="flex flex-col h-dvh w-full overflow-hidden bg-chat-bg">
+    <div
+      className="w-full bg-chat-bg font-arabic"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
+      <div
+        className="flex flex-col w-full overflow-hidden bg-chat-bg"
+        style={{ height: 'var(--app-height, 100dvh)' }}
+      >
         <ChatHeader
           onMenuOpen={() => setDrawerOpen(true)}
           hamburgerRef={hamburgerRef}

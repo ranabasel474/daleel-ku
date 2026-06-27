@@ -219,7 +219,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
                 aria-label={t.inputAriaLabel}
                 disabled={disabled}
                 maxLength={MAX_CHARS}
-                className={`w-full bg-secondary rounded-2xl py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring/40 transition-shadow font-arabic hc-input resize-none overflow-y-auto ${isRTL ? "pr-4 pl-24 text-right" : "pl-4 pr-24 text-left"}`}
+                className={`w-full bg-secondary rounded-2xl py-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring/40 transition-shadow font-arabic hc-input resize-none overflow-y-auto ${isRTL ? "pr-4 pl-24 text-right" : "pl-4 pr-24 text-left"}`}
                 style={{ maxHeight: "160px" }}
               />
 
