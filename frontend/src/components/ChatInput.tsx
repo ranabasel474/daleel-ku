@@ -153,7 +153,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
 
   return (
     <div
-      className="bg-card px-3 md:px-5 py-3 md:py-4 border-t border-border shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.06)] shrink-0"
+      className="bg-card px-3 md:px-5 pt-3 md:pt-4 pb-[calc(0.75rem+env(safe-area-inset-bottom)+3px)] md:pb-[calc(1rem+env(safe-area-inset-bottom)+3px)] border-t border-border shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.06)] shrink-0"
       role="region"
       aria-label={t.inputBarAriaLabel}
     >
