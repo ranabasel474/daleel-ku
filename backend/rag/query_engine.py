@@ -1,3 +1,4 @@
+import json
 import re
 from llama_index.core import VectorStoreIndex
 from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterCondition
@@ -25,6 +26,24 @@ _ARABIC_NOISE = re.compile(r"[ـً-ٟؐ-ؚ]")
 # Strips Arabic kashida and diacritic characters to improve retrieval accuracy
 def _clean_arabic(text: str) -> str:
     return _ARABIC_NOISE.sub("", text)
+
+
+# Resolves the real document_id for a node. The top-level metadata "document_id"
+# key can be clobbered by the vector store with the node's own id (matching
+# doc_id/ref_doc_id) on some rows, so we fall back to the nested _node_content
+# snapshot, which always reflects what chunk_and_store() originally wrote.
+def _resolve_document_id(meta: dict) -> str | None:
+    if meta.get("db_document_id"):
+        return meta["db_document_id"]
+    node_content = meta.get("_node_content")
+    if node_content:
+        try:
+            inner_meta = json.loads(node_content).get("metadata") or {}
+            if inner_meta.get("document_id"):
+                return inner_meta["document_id"]
+        except (json.JSONDecodeError, AttributeError):
+            pass
+    return meta.get("document_id")
 
 
 # Applies source-type boost, re-sorts, and drops low-scoring chunks
@@ -97,24 +116,24 @@ def search_query(
 
     for node in nodes:
         meta = node.metadata or {}
-        document_id = meta.get("db_document_id") or meta.get("document_id")
+        document_id = _resolve_document_id(meta)
         source_id = meta.get("source_id")
         url = None
         name = None
 
         if document_id:
             try:
-                doc_result = supabase_admin.table("document").select("source_url, document_type").eq("document_id", document_id).execute()
+                doc_result = supabase_admin.table("document").select("title, source_url, document_type").eq("document_id", document_id).execute()
                 if doc_result.data:
                     doc_type = doc_result.data[0].get("document_type") or ""
+                    url = doc_result.data[0].get("source_url")
                     if doc_type in ("instagram", "x") and source_id:
                         src_result = supabase_admin.table("source").select("url, source_name").eq("source_id", source_id).execute()
                         if src_result.data:
-                            url = src_result.data[0].get("url")
+                            url = url or src_result.data[0].get("url")
                             name = src_result.data[0].get("source_name") or url
                     else:
-                        url = doc_result.data[0].get("source_url")
-                        name = meta.get("file_name") or meta.get("source") or url
+                        name = doc_result.data[0].get("title") or meta.get("file_name") or url
             except Exception:
                 pass
 
