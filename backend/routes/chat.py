@@ -28,9 +28,6 @@ GPA_DISCLAIMER_EN = "This is an estimated GPA for reference only. Please verify 
 GREETING_AR = "مرحباً! أنا دليل، المساعد الأكاديمي لجامعة الكويت. كيف أقدر أساعدك؟"
 GREETING_EN = "Hello! I'm Daleel, Kuwait University's academic assistant. How can I help you?"
 
-SOURCES_HINT_AR = "لمزيد من المعلومات، يمكنك الاطلاع على المصادر أدناه."
-SOURCES_HINT_EN = "For more information, check out the sources below."
-
 _latex_converter = LatexNodes2Text()
 
 
@@ -98,45 +95,6 @@ def detect_query_type(text):
         return "general"
 
 
-# Rewrites a follow-up query into a standalone question using conversation history
-def _rewrite_query(query_text, memory):
-    if not memory:
-        return query_text
-    history = memory.get()
-    if not history:
-        return query_text
-    history_text = "\n".join(
-        f"{'Student' if m.role == 'user' else 'Assistant'}: {m.content[:300]}"
-        for m in history[-6:]
-    )
-    try:
-        result = _openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": (
-                    "You rewrite follow-up questions into standalone queries. "
-                    "Use the conversation history to resolve references like "
-                    "'more', 'that', 'it', 'those', etc. "
-                    "If the query is already standalone, return it unchanged. "
-                    "Return only the rewritten query, nothing else."
-                )},
-                {"role": "user", "content": (
-                    f"Conversation history:\n{history_text}\n\n"
-                    f"Follow-up query: {query_text}"
-                )},
-            ],
-            max_tokens=150,
-            temperature=0,
-        )
-        rewritten = result.choices[0].message.content.strip()
-        if rewritten:
-            print(f"[rewrite] '{query_text}' -> '{rewritten}'")
-            return rewritten
-    except Exception as e:
-        print(f"Warning: query rewrite failed, using original — {e}")
-    return query_text
-
-
 # Dispatches to GPA or RAG handler, logs the result to Supabase, and returns a Flask response tuple
 def _process_and_respond(query_text, session_id, query_type):
     memory = None
@@ -152,17 +110,12 @@ def _process_and_respond(query_text, session_id, query_type):
         result = handle_gpa_query(query_text, memory=memory)
         result["answer"] = format_gpa_response(result["answer"], query_text)
     else:
-        retrieval_query = _rewrite_query(query_text, memory)
-        search_result = search_query(index, retrieval_query)
+        search_result = search_query(index, query_text)
         result = generate_response(search_result, query_text, memory=memory)
 
     response_text = result["answer"]
     was_answered = result["was_answered"]
     sources = result.get("sources", [])
-
-    if was_answered and sources:
-        is_arabic = any('؀' <= ch <= 'ۿ' for ch in query_text)
-        response_text += "\n\n" + (SOURCES_HINT_AR if is_arabic else SOURCES_HINT_EN)
 
     # Logging failure must not block the student from receiving their response
     try:
