@@ -28,6 +28,9 @@ GPA_DISCLAIMER_EN = "This is an estimated GPA for reference only. Please verify 
 GREETING_AR = "مرحباً! أنا دليل، المساعد الأكاديمي لجامعة الكويت. كيف أقدر أساعدك؟"
 GREETING_EN = "Hello! I'm Daleel, Kuwait University's academic assistant. How can I help you?"
 
+SOURCES_HINT_AR = "لمزيد من المعلومات، يمكنك الاطلاع على المصادر أدناه."
+SOURCES_HINT_EN = "For more information, check out the sources below."
+
 _latex_converter = LatexNodes2Text()
 
 
@@ -116,6 +119,10 @@ def _process_and_respond(query_text, session_id, query_type):
     response_text = result["answer"]
     was_answered = result["was_answered"]
     sources = result.get("sources", [])
+
+    if was_answered and sources:
+        is_arabic = any('؀' <= ch <= 'ۿ' for ch in query_text)
+        response_text += "\n\n" + (SOURCES_HINT_AR if is_arabic else SOURCES_HINT_EN)
 
     # Logging failure must not block the student from receiving their response
     try:
